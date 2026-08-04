@@ -77,5 +77,4 @@ export interface DashboardData {
   upcoming_editions: ConferenceEdition[];
   recently_updated: Conference[];
   missing_next_editions: Array<Conference & { expected_year: number }>;
-  unconfirmed: ConferenceEdition[];
 }

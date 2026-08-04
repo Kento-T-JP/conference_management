@@ -18,7 +18,7 @@ export function DashboardPage() {
   const nextEdition = data.upcoming_editions[0];
   return <>
     <section className="dashboard-hero mb-5 flex flex-col justify-between gap-8 sm:flex-row sm:items-end">
-      <div className="relative z-10 max-w-2xl"><p className="mb-5 text-[.68rem] font-black uppercase tracking-[.25em] text-white/55">Shinomiya Laboratory</p><h1 className="text-4xl font-black leading-[1.04] tracking-[-.055em] sm:text-6xl">次の締切を、<br />ひと目で。</h1><p className="mt-5 max-w-lg text-sm font-medium leading-7 text-white/70 sm:text-base">篠宮研究室の学会情報から、直近の締切と確認が必要な項目をまとめています。</p><Link to="/conferences/new" className="btn-primary mt-7">＋ 新規登録をはじめる</Link></div>
+      <div className="relative z-10 max-w-2xl"><p className="mb-5 text-[.68rem] font-black uppercase tracking-[.25em] text-white/55">Shinomiya Laboratory</p><h1 className="text-4xl font-black leading-[1.04] tracking-[-.055em] sm:text-6xl">次の締切を、<br />ひと目で。</h1><p className="mt-5 max-w-lg text-sm font-medium leading-7 text-white/70 sm:text-base">篠宮研究室の学会情報から、直近の締切と今後の開催予定をまとめています。</p><Link to="/conferences/new" className="btn-primary mt-7">＋ 新規登録をはじめる</Link></div>
       <div className="hero-focus-card">
         <p className="text-xs font-black uppercase tracking-[.16em] text-white/65">次の予定</p>
         {nextDeadline ? <Link to={`/editions/${nextDeadline.id}`} className="mt-4 block rounded-2xl outline-none transition hover:bg-white/5 focus-visible:bg-white/5">
@@ -48,14 +48,9 @@ export function DashboardPage() {
         </Link>)}</div> : <DeadlineEmptyState />}
       </section>
 
-      <div className="space-y-6">
-        <section><SectionTitle title="次年度情報が未登録" />
-          <div className="surface p-4">{data.missing_next_editions.length ? <ul className="space-y-3">{data.missing_next_editions.map((item) => <li key={item.id} className="flex items-center justify-between gap-3"><Link className="font-bold text-forest-900 hover:underline" to={`/conferences/${item.id}`}>{item.acronym}</Link><span className="chip bg-amber-100 text-amber-900">{item.expected_year}年</span></li>)}</ul> : <p className="text-sm text-slate-500">未登録の定期開催学会はありません。</p>}</div>
-        </section>
-        <section><SectionTitle title="情報の確認が必要" />
-          <div className="surface p-4">{data.unconfirmed.length ? <ul className="space-y-3">{data.unconfirmed.slice(0, 6).map((item) => <li key={item.id} className="flex items-center justify-between gap-3"><Link className="font-bold text-forest-900 hover:underline" to={`/conferences/${item.conference_id}`}>{item.acronym} {item.year}</Link><StatusBadge value={item.information_status} /></li>)}</ul> : <p className="text-sm text-slate-500">確認待ちの開催回はありません。</p>}</div>
-        </section>
-      </div>
+      <section><SectionTitle title="次年度情報が未登録" />
+        <div className="surface p-4">{data.missing_next_editions.length ? <ul className="space-y-3">{data.missing_next_editions.map((item) => <li key={item.id} className="flex items-center justify-between gap-3"><Link className="font-bold text-forest-900 hover:underline" to={`/conferences/${item.id}`}>{item.acronym}</Link><span className="chip bg-amber-100 text-amber-900">{item.expected_year}年</span></li>)}</ul> : <p className="text-sm text-slate-500">未登録の定期開催学会はありません。</p>}</div>
+      </section>
     </div>
 
     <section className="mt-8"><SectionTitle title="今後開催される学会" link="/calendar" />

@@ -10,12 +10,12 @@ export function PageHeader({ eyebrow, title, description, action }: { eyebrow?: 
 }
 
 export function StatusBadge({ value }: { value: string }) {
-  const confirmed = value === '公式';
-  return <span className={`chip ${confirmed ? 'bg-emerald-100 text-emerald-800' : 'bg-slate-200 text-slate-700'}`}>{confirmed ? '公式確認済み' : '未確認'}</span>;
+  if (value !== '公式') return null;
+  return <span className="chip bg-emerald-100 text-emerald-800">公式確認済み</span>;
 }
 
 export function OfficialConfirmation({ checked, onChange }: { checked: boolean; onChange: (checked: boolean) => void }) {
-  return <label className="official-confirmation"><input type="checkbox" checked={checked} onChange={(event) => onChange(event.target.checked)} /><span><strong>公式サイトで確認済み</strong><small>未チェックの場合は「未確認」として保存します</small></span></label>;
+  return <label className="official-confirmation"><input type="checkbox" checked={checked} onChange={(event) => onChange(event.target.checked)} /><span><strong>公式サイトで確認済み</strong><small>チェックした情報だけ確認済みとして表示します</small></span></label>;
 }
 
 export function DeadlineBadge({ date, aoe, hasTime }: { date: string; aoe?: boolean; hasTime?: boolean }) {

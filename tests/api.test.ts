@@ -60,4 +60,24 @@ describe('API', () => {
     expect(deleted[0]).toContain('DELETE FROM notification_logs');
     expect(deleted[2]).toContain('DELETE FROM conference_editions');
   });
+
+  it('次年度の開催回が存在する場合は複製しない', async () => {
+    const db = {
+      prepare(query: string) {
+        return {
+          bind() { return this; },
+          async first() {
+            if (query.includes('SELECT * FROM conference_editions')) return { id: 31, conference_id: 12, year: 2028 };
+            if (query.includes('SELECT id FROM conference_editions')) return { id: 32 };
+            return null;
+          }
+        };
+      }
+    } as unknown as D1Database;
+    const env = { APP_BASE_URL: 'http://localhost:5173', ENVIRONMENT: 'test', DB: db } satisfies Env;
+    const ctx = { waitUntil() {}, passThroughOnException() {}, props: {} } as unknown as ExecutionContext;
+    const response = await worker.fetch(new Request('http://localhost/api/editions/31/duplicate-next-year', { method: 'POST' }), env, ctx);
+    expect(response.status).toBe(409);
+    expect(await response.json()).toEqual({ error: { code: 'DUPLICATE_EDITION', message: '次年度の開催回は既に存在します。' } });
+  });
 });
