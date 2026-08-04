@@ -49,6 +49,10 @@ export const deadlineSchema = z.object({
   version: z.number().int().positive().optional()
 });
 
+export const deadlineBatchSchema = z.object({
+  deadlines: z.array(deadlineSchema).min(1, '締切を1件以上入力してください。').max(20, '一度に登録できる締切は20件までです。')
+});
+
 export type ConferenceInput = z.infer<typeof conferenceSchema>;
 export type EditionInput = z.infer<typeof editionSchema>;
 export type DeadlineInput = z.infer<typeof deadlineSchema>;

@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { conferenceSchema, deadlineSchema, editionSchema } from '../src/shared/schemas';
+import { conferenceSchema, deadlineBatchSchema, deadlineSchema, editionSchema } from '../src/shared/schemas';
 
 describe('入力バリデーション', () => {
   it('正常な学会を受け付ける', () => expect(conferenceSchema.safeParse({ name: 'Example Conference', acronym: 'EC', official_url: 'https://example.com', conference_type: '国際会議', frequency: '毎年' }).success).toBe(true));
@@ -9,4 +9,9 @@ describe('入力バリデーション', () => {
   it('開催終了日が開始日より前なら拒否する', () => expect(editionSchema.safeParse({ year: 2027, start_date: '2027-10-10', end_date: '2027-10-09' }).success).toBe(false));
   it('不正なenum値を拒否する', () => expect(deadlineSchema.safeParse({ deadline_type: 'Unknown', deadline_at: '2027-01-01' }).success).toBe(false));
   it('AoE締切を受け付ける', () => expect(deadlineSchema.safeParse({ deadline_type: 'Full Paper', deadline_at: '2027-01-01', is_aoe: true, timezone: 'AoE' }).success).toBe(true));
+  it('複数の締切をまとめて受け付ける', () => expect(deadlineBatchSchema.safeParse({ deadlines: [
+    { deadline_type: 'Full Paper', deadline_at: '2027-01-01' },
+    { deadline_type: 'Author Notification', deadline_at: '2027-02-01' }
+  ] }).success).toBe(true));
+  it('空の締切一括登録を拒否する', () => expect(deadlineBatchSchema.safeParse({ deadlines: [] }).success).toBe(false));
 });

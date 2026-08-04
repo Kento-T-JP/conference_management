@@ -6,8 +6,21 @@ export const DEADLINE_TYPES = ['Abstract', 'Full Paper', 'Short Paper', 'Poster'
 
 export const PRIMARY_DEADLINE_TYPES = ['Abstract', 'Full Paper', 'Short Paper', 'Poster', 'Workshop'] as const;
 
+export const CALENDAR_EVENT_GROUPS = [
+  { id: 'submission', label: '投稿締切', deadlineTypes: ['Abstract', 'Full Paper', 'Short Paper', 'Poster', 'Workshop', 'Other'] },
+  { id: 'notification', label: '採否通知', deadlineTypes: ['Author Notification'] },
+  { id: 'camera_ready', label: '最終稿', deadlineTypes: ['Camera-ready'] },
+  { id: 'registration', label: '参加登録', deadlineTypes: ['Registration'] },
+  { id: 'conference', label: '開催期間', deadlineTypes: [] }
+] as const;
+
 export type ConferenceType = (typeof CONFERENCE_TYPES)[number];
 export type Frequency = (typeof FREQUENCIES)[number];
 export type AttendanceFormat = (typeof ATTENDANCE_FORMATS)[number];
 export type InformationStatus = (typeof INFORMATION_STATUSES)[number];
 export type DeadlineType = (typeof DEADLINE_TYPES)[number];
+export type CalendarEventGroup = (typeof CALENDAR_EVENT_GROUPS)[number]['id'];
+
+export function calendarGroupForDeadline(type: string): CalendarEventGroup {
+  return CALENDAR_EVENT_GROUPS.find((group) => (group.deadlineTypes as readonly string[]).includes(type))?.id ?? 'submission';
+}

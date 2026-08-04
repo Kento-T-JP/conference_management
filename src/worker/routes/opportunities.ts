@@ -1,4 +1,5 @@
 import { Hono } from 'hono';
+import { CALENDAR_EVENT_GROUPS, calendarGroupForDeadline } from '../../shared/constants';
 import type { Env } from '../index';
 import { errorResponse } from '../lib/api';
 import { mapConference, mapEdition } from '../lib/db';
@@ -43,28 +44,32 @@ opportunityRoutes.get('/calendar/events', async (c) => {
     const start = c.req.query('start') ?? new Date().toISOString().slice(0, 10);
     const end = c.req.query('end') ?? `${new Date().getUTCFullYear() + 1}-12-31`;
     const statuses = (c.req.query('information_status') ?? '').split(',').filter(Boolean);
-    const eventTypes = (c.req.query('event_types') ?? '').split(',').filter(Boolean);
+    const requestedGroups = (c.req.query('event_categories') ?? CALENDAR_EVENT_GROUPS.map((group) => group.id).join(',')).split(',');
+    const eventGroups = requestedGroups.filter((value) => CALENDAR_EVENT_GROUPS.some((group) => group.id === value));
     const fields = (c.req.query('fields') ?? '').split(',').filter(Boolean);
+    const conferenceTypes = (c.req.query('conference_types') ?? '').split(',').filter(Boolean);
     const statusSql = statuses.length ? ` AND d.information_status IN (${statuses.map(() => '?').join(',')})` : '';
-    const typeSql = eventTypes.length ? ` AND d.deadline_type IN (${eventTypes.map(() => '?').join(',')})` : '';
+    const deadlineTypes = CALENDAR_EVENT_GROUPS.filter((group) => eventGroups.includes(group.id)).flatMap((group) => [...group.deadlineTypes]);
+    const typeSql = deadlineTypes.length ? ` AND d.deadline_type IN (${deadlineTypes.map(() => '?').join(',')})` : ' AND 1=0';
     const fieldSql = fields.length ? ` AND (${fields.map(() => 'c.fields LIKE ?').join(' OR ')})` : '';
+    const conferenceTypeSql = conferenceTypes.length ? ` AND c.conference_type IN (${conferenceTypes.map(() => '?').join(',')})` : '';
     const deadlines = await c.env.DB.prepare(`SELECT d.id, d.deadline_type, d.title, d.deadline_at, d.has_time, d.is_aoe, d.information_status, e.id edition_id, e.year, c.acronym
       FROM conference_deadlines d JOIN conference_editions e ON e.id=d.conference_edition_id JOIN conferences c ON c.id=e.conference_id
-      WHERE e.is_archived=0 AND c.is_archived=0 AND date(d.deadline_at) >= date(?) AND date(d.deadline_at) < date(?)${statusSql}${typeSql}${fieldSql}`)
-      .bind(start, end, ...statuses, ...eventTypes, ...fields.map((field) => `%${field}%`)).all<Record<string, unknown>>();
-    const includeConference = !eventTypes.length || eventTypes.includes('Conference');
-    const editions = includeConference ? await c.env.DB.prepare(`SELECT e.id, e.start_date, e.end_date, e.information_status, e.year, c.acronym FROM conference_editions e JOIN conferences c ON c.id=e.conference_id WHERE e.is_archived=0 AND c.is_archived=0 AND e.start_date IS NOT NULL AND e.start_date < date(?) AND COALESCE(e.end_date,e.start_date) >= date(?)${statuses.length ? ` AND e.information_status IN (${statuses.map(() => '?').join(',')})` : ''}${fieldSql}`)
-      .bind(end, start, ...statuses, ...fields.map((field) => `%${field}%`)).all<Record<string, unknown>>() : { results: [] };
+      WHERE e.is_archived=0 AND c.is_archived=0 AND date(d.deadline_at) >= date(?) AND date(d.deadline_at) < date(?)${statusSql}${typeSql}${fieldSql}${conferenceTypeSql}`)
+      .bind(start, end, ...statuses, ...deadlineTypes, ...fields.map((field) => `%${field}%`), ...conferenceTypes).all<Record<string, unknown>>();
+    const includeConference = eventGroups.includes('conference');
+    const editions = includeConference ? await c.env.DB.prepare(`SELECT e.id, e.start_date, e.end_date, e.information_status, e.year, c.acronym FROM conference_editions e JOIN conferences c ON c.id=e.conference_id WHERE e.is_archived=0 AND c.is_archived=0 AND e.start_date IS NOT NULL AND e.start_date < date(?) AND COALESCE(e.end_date,e.start_date) >= date(?)${statuses.length ? ` AND e.information_status IN (${statuses.map(() => '?').join(',')})` : ''}${fieldSql}${conferenceTypeSql}`)
+      .bind(end, start, ...statuses, ...fields.map((field) => `%${field}%`), ...conferenceTypes).all<Record<string, unknown>>() : { results: [] };
     const events = [
-      ...deadlines.results.map((row) => ({ id: `deadline-${row.id}`, title: `[${shortType(String(row.deadline_type))}] ${row.acronym}`, start: row.deadline_at, allDay: !row.has_time, url: `/editions/${row.edition_id}`, extendedProps: { kind: row.deadline_type, status: row.information_status, aoe: Boolean(row.is_aoe) } })),
-      ...editions.results.map((row) => ({ id: `edition-${row.id}`, title: `[開催] ${row.acronym} ${row.year}`, start: row.start_date, end: addDay(String(row.end_date ?? row.start_date)), allDay: true, url: `/editions/${row.id}`, extendedProps: { kind: 'Conference', status: row.information_status } }))
+      ...deadlines.results.map((row) => { const group = calendarGroupForDeadline(String(row.deadline_type)); return { id: `deadline-${row.id}`, title: `[${shortGroup(group)}] ${row.acronym}`, start: row.deadline_at, allDay: !row.has_time, url: `/editions/${row.edition_id}`, extendedProps: { kind: group, deadlineType: row.deadline_type, status: row.information_status, aoe: Boolean(row.is_aoe) } }; }),
+      ...editions.results.map((row) => ({ id: `edition-${row.id}`, title: `[開催] ${row.acronym} ${row.year}`, start: row.start_date, end: addDay(String(row.end_date ?? row.start_date)), allDay: true, url: `/editions/${row.id}`, extendedProps: { kind: 'conference', status: row.information_status } }))
     ];
     return c.json({ data: events });
   } catch (error) { return errorResponse(c, error); }
 });
 
-function shortType(type: string) {
-  return ({ 'Full Paper': '論文', 'Short Paper': '短論文', Abstract: '要旨', Poster: 'Poster', Workshop: 'WS', 'Camera-ready': '最終稿', 'Author Notification': '採否', Registration: '登録', Other: '他' } as Record<string, string>)[type] ?? type;
+function shortGroup(group: string) {
+  return ({ submission: '投稿', notification: '採否', camera_ready: '最終稿', registration: '登録' } as Record<string, string>)[group] ?? group;
 }
 
 function addDay(date: string): string {

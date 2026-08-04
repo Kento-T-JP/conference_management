@@ -94,6 +94,20 @@ a { color: inherit; }
 .form-section { @apply rounded-[1.35rem] border border-slate-200/80 bg-[#fbfaf7]/80 p-4 sm:p-5; }
 .choice-card { @apply flex cursor-pointer gap-3 rounded-2xl border border-slate-200 bg-white/70 p-4 transition hover:border-forest-700/40 hover:bg-white; }
 .choice-card:has(input:checked) { @apply border-forest-700/40 bg-forest-50; }
+.deadline-draft-card { @apply rounded-[1.35rem] border border-slate-200/90 bg-[#fbfaf7]/80 p-4 sm:p-5; }
+.deadline-inline-option { @apply flex cursor-pointer items-start gap-2 rounded-xl border border-slate-200 bg-white/70 px-3 py-2.5 text-sm transition hover:border-forest-700/40; }
+.deadline-inline-option:has(input:checked) { @apply border-forest-700/35 bg-forest-50; }
+.deadline-inline-option input { @apply mt-1 size-4 accent-[#2c6652]; }
+.deadline-inline-option strong { @apply block text-xs font-black text-forest-950; }
+.deadline-inline-option small { @apply mt-0.5 block text-[.68rem] text-slate-500; }
+.calendar-filter { @apply inline-flex cursor-pointer items-center gap-2 rounded-full border border-slate-200 bg-white/60 px-3 py-2 text-xs font-bold text-slate-500 transition; }
+.calendar-filter.is-active { @apply border-forest-700/25 bg-forest-50 text-forest-950; }
+.calendar-filter-dot { @apply size-2 rounded-full bg-slate-300; }
+.calendar-filter--submission.is-active .calendar-filter-dot { background: #2c6652; }
+.calendar-filter--notification.is-active .calendar-filter-dot { background: #3973a8; }
+.calendar-filter--camera_ready.is-active .calendar-filter-dot { background: #76558f; }
+.calendar-filter--registration.is-active .calendar-filter-dot { background: #c86b3f; }
+.calendar-filter--conference.is-active .calendar-filter-dot { background: #334155; }
 .bento-card { @apply relative overflow-hidden rounded-[1.55rem] border border-white/80 p-5 shadow-[0_18px_45px_-34px_rgba(16,39,31,.45)] sm:p-6; }
 .bento-card::after { position: absolute; top: 0; right: 0; width: 5rem; height: 5rem; border-radius: 0 0 0 5rem; background: rgba(255,255,255,.3); content: ""; }
 
@@ -102,6 +116,11 @@ a { color: inherit; }
 .fc { --fc-border-color: #e2e8f0; --fc-button-bg-color: #16372c; --fc-button-border-color: #16372c; --fc-button-hover-bg-color: #20503f; --fc-today-bg-color: #fff8e8; }
 .fc .fc-toolbar-title { font-size: 1.1rem; }
 .fc .fc-event { border: 0; padding: 2px; cursor: pointer; }
+.fc .calendar-event--submission { background: #2c6652; }
+.fc .calendar-event--notification { background: #3973a8; }
+.fc .calendar-event--camera_ready { background: #76558f; }
+.fc .calendar-event--registration { background: #c86b3f; }
+.fc .calendar-event--conference { background: #334155; }
 
 @media (max-width: 640px) {
   body::before { opacity: .14; }

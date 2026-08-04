@@ -1,10 +1,28 @@
 import { Hono } from 'hono';
-import { deadlineSchema } from '../../shared/schemas';
+import { deadlineBatchSchema, deadlineSchema } from '../../shared/schemas';
 import type { Env } from '../index';
 import { ApiError, errorResponse, nowSql, parseId, validationDetails } from '../lib/api';
 import { deadlineChangedMessage, sendSlack } from '../services/slack';
 
 export const deadlineRoutes = new Hono<{ Bindings: Env }>();
+
+deadlineRoutes.post('/edition/:editionId/batch', async (c) => {
+  try {
+    const editionId = parseId(c.req.param('editionId'));
+    const parsed = deadlineBatchSchema.safeParse(await c.req.json());
+    if (!parsed.success) throw new ApiError(400, 'VALIDATION_ERROR', '入力内容を確認してください。', validationDetails(parsed.error));
+    const edition = await c.env.DB.prepare('SELECT end_date FROM conference_editions WHERE id=? AND is_archived=0').bind(editionId).first<{ end_date: string | null }>();
+    if (!edition) throw new ApiError(404, 'NOT_FOUND', '開催回が見つかりません。');
+    const now = nowSql();
+    const statements = parsed.data.deadlines.map((deadline) => c.env.DB.prepare(`INSERT INTO conference_deadlines(conference_edition_id, deadline_type, title, deadline_at, has_time, timezone, is_aoe, information_status, notification_enabled, created_at, updated_at) VALUES(?,?,?,?,?,?,?,?,?,?,?)`)
+      .bind(editionId, deadline.deadline_type, deadline.title ?? null, deadline.deadline_at, deadline.has_time ? 1 : 0, deadline.timezone ?? null, deadline.is_aoe ? 1 : 0, deadline.information_status, deadline.notification_enabled ? 1 : 0, now, now));
+    const results = await c.env.DB.batch(statements);
+    const ids = results.map((result) => result.meta.last_row_id).filter((value): value is number => typeof value === 'number');
+    const rows = ids.length ? await c.env.DB.prepare(`SELECT * FROM conference_deadlines WHERE id IN (${ids.map(() => '?').join(',')}) ORDER BY deadline_at`).bind(...ids).all() : { results: [] };
+    const warnings = parsed.data.deadlines.flatMap((deadline, index) => edition.end_date && deadline.deadline_at.slice(0, 10) > edition.end_date ? [{ index, message: '締切が開催終了日より後です。' }] : []);
+    return c.json({ data: rows.results, warnings }, 201);
+  } catch (error) { return errorResponse(c, error); }
+});
 
 deadlineRoutes.post('/edition/:editionId', async (c) => {
   try {
