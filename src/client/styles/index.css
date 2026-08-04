@@ -56,6 +56,49 @@ a { color: inherit; }
   color: #fff !important;
   background-color: #10271f !important;
 }
+.mobile-menu-button {
+  @apply inline-flex min-h-10 items-center gap-2 rounded-full border border-forest-900/15 bg-white/60 px-4 text-xs font-black text-forest-950 transition duration-200 hover:bg-white lg:hidden;
+}
+.mobile-menu-icon { @apply relative block size-4; }
+.mobile-menu-icon i {
+  position: absolute;
+  left: 1px;
+  width: 14px;
+  height: 2px;
+  border-radius: 999px;
+  background: currentColor;
+  transition: transform 260ms cubic-bezier(.22, 1, .36, 1), opacity 160ms ease, top 260ms cubic-bezier(.22, 1, .36, 1);
+}
+.mobile-menu-icon i:nth-child(1) { top: 3px; }
+.mobile-menu-icon i:nth-child(2) { top: 7px; }
+.mobile-menu-icon i:nth-child(3) { top: 11px; }
+.mobile-menu-button.is-open .mobile-menu-icon i:nth-child(1) { top: 7px; transform: rotate(45deg); }
+.mobile-menu-button.is-open .mobile-menu-icon i:nth-child(2) { opacity: 0; transform: scaleX(.4); }
+.mobile-menu-button.is-open .mobile-menu-icon i:nth-child(3) { top: 7px; transform: rotate(-45deg); }
+.mobile-menu-shell {
+  @apply grid border-t border-transparent bg-[#f3f0e9]/95 lg:hidden;
+  grid-template-rows: 0fr;
+  visibility: hidden;
+  opacity: 0;
+  transition: grid-template-rows 300ms cubic-bezier(.22, 1, .36, 1), opacity 180ms ease, border-color 180ms ease, visibility 0s linear 300ms;
+}
+.mobile-menu-shell.is-open {
+  grid-template-rows: 1fr;
+  visibility: visible;
+  opacity: 1;
+  border-color: rgba(16, 39, 31, .1);
+  transition-delay: 0s;
+}
+.mobile-menu-content {
+  @apply min-h-0 overflow-hidden px-4;
+  padding-bottom: 0;
+  transform: translateY(-.55rem);
+  transition: transform 300ms cubic-bezier(.22, 1, .36, 1), padding-bottom 300ms cubic-bezier(.22, 1, .36, 1);
+}
+.mobile-menu-shell.is-open .mobile-menu-content {
+  padding-bottom: 1rem;
+  transform: translateY(0);
+}
 .btn-primary {
   @apply inline-flex min-h-11 items-center justify-center rounded-full bg-[#e36f50] px-5 py-2 text-sm font-black text-white shadow-[0_10px_25px_-12px_rgba(227,111,80,.9)] transition duration-200 hover:-translate-y-0.5 hover:bg-[#cf5e42] disabled:cursor-not-allowed disabled:opacity-50;
 }
