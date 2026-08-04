@@ -4,6 +4,7 @@ import type { Conference } from '../../shared/types';
 import { CONFERENCE_TYPES, FREQUENCIES } from '../../shared/constants';
 import { ApiClientError, api } from '../lib/api';
 import { FieldError, Loading, PageHeader } from '../components/ui';
+import { SetupProgress } from '../components/SetupProgress';
 
 const empty = { name: '', acronym: '', official_url: '', conference_type: '国際会議', frequency: '毎年', fields: '', keywords: '', notes: '', version: undefined as number | undefined };
 
@@ -27,7 +28,7 @@ export function ConferenceFormPage() {
     try {
       const response = await api<{ data: Conference; warnings?: { duplicates?: unknown[] } }>(id ? `/api/conferences/${id}` : '/api/conferences', { method: id ? 'PUT' : 'POST', body: JSON.stringify(body) });
       if (response.warnings?.duplicates?.length) setMessage('重複候補があります。登録内容を確認してください。');
-      navigate(`/conferences/${response.data.id}`);
+      navigate(id ? `/conferences/${response.data.id}` : `/conferences/${response.data.id}/editions/new?setup=1`);
     } catch (error) {
       if (error instanceof ApiClientError) { setErrors(error.body.error.details ?? {}); setMessage(error.message); }
       else setMessage('保存に失敗しました。');
@@ -35,7 +36,8 @@ export function ConferenceFormPage() {
   }
 
   const update = (key: keyof typeof form, value: string) => setForm({ ...form, [key]: value });
-  return <><PageHeader title={id ? '学会情報を編集' : '学会を追加'} description="年度ごとの開催日や締切は、学会を保存した後に開催回として追加します。" />
+  return <><PageHeader title={id ? '学会情報を編集' : '学会を登録'} description={id ? undefined : '最初に学会の基本情報を入力します。保存すると開催回の入力へ進みます。'} />
+    {!id && <div className="mx-auto max-w-3xl"><SetupProgress current={1} /></div>}
     <form onSubmit={submit} className="mx-auto max-w-3xl space-y-5">
       {message && <div className="rounded-xl border border-amber-200 bg-amber-50 p-4 text-sm text-amber-900">{message}</div>}
       <fieldset className="surface p-5 sm:p-7"><legend className="px-2 text-lg font-black text-forest-950">基本情報</legend><div className="grid gap-5 sm:grid-cols-3">
@@ -50,7 +52,7 @@ export function ConferenceFormPage() {
         <label><span className="label">検索キーワード</span><input className="field" placeholder="bioinformatics, BIBM" value={form.keywords} onChange={(e) => update('keywords', e.target.value)} /></label>
       </div></fieldset>
       <fieldset className="surface p-5 sm:p-7"><legend className="px-2 text-lg font-black text-forest-950">補足</legend><label><span className="label">備考</span><textarea className="field min-h-28" maxLength={1000} value={form.notes} onChange={(e) => update('notes', e.target.value)} /></label></fieldset>
-      <div className="flex justify-end gap-3"><Link to={id ? `/conferences/${id}` : '/conferences'} className="btn-secondary">キャンセル</Link><button className="btn-primary" disabled={saving}>{saving ? '保存中…' : '保存する'}</button></div>
+      <div className="flex justify-end gap-3"><Link to={id ? `/conferences/${id}` : '/conferences'} className="btn-secondary">キャンセル</Link><button className="btn-primary" disabled={saving}>{saving ? '保存中…' : id ? '保存する' : '次へ：開催回を入力'}</button></div>
     </form></>;
 }
 
