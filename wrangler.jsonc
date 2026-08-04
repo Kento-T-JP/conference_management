@@ -1,0 +1,42 @@
+{
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "name": "conference-management",
+  "main": "src/worker/index.ts",
+  "compatibility_date": "2026-07-31",
+  "assets": {
+    "not_found_handling": "single-page-application"
+  },
+  "d1_databases": [
+    {
+      "binding": "DB",
+      "database_name": "conference-management-local",
+      "database_id": "00000000-0000-0000-0000-000000000000",
+      "migrations_dir": "migrations"
+    }
+  ],
+  "triggers": {
+    "crons": ["0 0 * * 1", "0 0 * * *"]
+  },
+  "vars": {
+    "APP_BASE_URL": "http://localhost:5173",
+    "ENVIRONMENT": "development"
+  },
+  "env": {
+    "production": {
+      "name": "conference-management",
+      "d1_databases": [
+        {
+          "binding": "DB",
+          "database_name": "conference-management",
+          "database_id": "REPLACE_WITH_PRODUCTION_D1_DATABASE_ID",
+          "migrations_dir": "migrations"
+        }
+      ],
+      "vars": {
+        "APP_BASE_URL": "https://conference-management.example.workers.dev",
+        "ENVIRONMENT": "production"
+      }
+    }
+  },
+  "observability": { "enabled": true }
+}
