@@ -9,7 +9,7 @@ import { DeadlineBadge, EmptyState, ErrorState, formatDate, Loading, PageHeader,
 export function EditionsPage() {
   const [filters, setFilters] = useState({ year: '', attendance_format: '', information_status: '', sort: 'deadline', include_past: false });
   const { data, loading, error, reload } = useApi<ConferenceEdition[]>(`/api/editions${queryString(filters)}`);
-  return <><PageHeader eyebrow="Open opportunities" title="開催回を比較する" description="応募可能な開催回を締切順で確認できます。締切済みの開催回は必要なときだけ表示します。" />
+  return <><PageHeader title="開催回" description="年度別の開催情報と締切を確認します。" />
     <div className="surface mb-5 grid gap-3 p-4 sm:grid-cols-2 lg:grid-cols-5">
       <label><span className="label">開催年</span><input className="field" inputMode="numeric" placeholder="例: 2027" value={filters.year} onChange={(e) => setFilters({ ...filters, year: e.target.value })} /></label>
       <label><span className="label">開催形式</span><select className="field" value={filters.attendance_format} onChange={(e) => setFilters({ ...filters, attendance_format: e.target.value })}><option value="">すべて</option>{ATTENDANCE_FORMATS.map((v) => <option key={v}>{v}</option>)}</select></label>

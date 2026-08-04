@@ -13,7 +13,7 @@ export function DashboardPage() {
     return diff >= 0 && diff <= days;
   });
   return <>
-    <PageHeader eyebrow="Today’s opportunities" title="投稿機会を、見逃さない。" description="直近の締切と、情報を更新すべき学会をまとめています。まずは7日以内の締切を確認してください。" action={<Link to="/conferences/new" className="btn-primary">＋ 学会を追加</Link>} />
+    <PageHeader title="締切を確認する" description="直近の締切と、確認が必要な学会を表示しています。" action={<Link to="/conferences/new" className="btn-primary">＋ 学会を追加</Link>} />
     <section className="grid gap-4 sm:grid-cols-3" aria-label="締切サマリー">
       <SummaryCard label="7日以内" value={within(7).length} tone="urgent" />
       <SummaryCard label="30日以内" value={within(30).length} tone="soon" />

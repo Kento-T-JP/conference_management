@@ -16,7 +16,7 @@ export function Layout() {
         <div className="mx-auto flex h-16 max-w-7xl items-center justify-between px-4 sm:px-6">
           <NavLink to="/" className="flex items-center gap-3" onClick={() => setOpen(false)}>
             <span className="grid size-9 place-items-center rounded-xl bg-amber-500 font-black text-forest-950">C</span>
-            <span><span className="block text-sm font-black tracking-wide">学会機会管理</span><span className="block text-[10px] text-forest-100">Conference Opportunities</span></span>
+            <span className="text-sm font-black tracking-wide">学会管理</span>
           </NavLink>
           <button className="rounded-lg border border-white/20 px-3 py-2 text-sm sm:hidden" onClick={() => setOpen(!open)} aria-expanded={open} aria-label="メニューを開く">メニュー</button>
           <nav className="hidden items-center gap-1 sm:flex" aria-label="メインナビゲーション">
@@ -27,7 +27,7 @@ export function Layout() {
         {open && <nav className="border-t border-white/10 px-4 pb-4 sm:hidden">{nav.map(([to, label]) => <NavItem key={to} to={to} label={label} mobile onClick={() => setOpen(false)} />)}<NavLink to="/conferences/new" onClick={() => setOpen(false)} className="mt-2 block rounded-xl bg-amber-500 px-4 py-3 text-center text-sm font-black text-forest-950">＋ 学会を追加</NavLink></nav>}
       </header>
       <main className="mx-auto max-w-7xl px-4 py-7 sm:px-6 sm:py-10"><Outlet /></main>
-      <footer className="mx-auto max-w-7xl border-t border-slate-200 px-4 py-6 text-xs text-slate-500 sm:px-6">研究室内の投稿機会を、ひとつの場所に。</footer>
+      <footer className="mx-auto max-w-7xl border-t border-slate-200 px-4 py-6 text-xs text-slate-500 sm:px-6">学会情報と締切を管理します。</footer>
     </div>
   );
 }

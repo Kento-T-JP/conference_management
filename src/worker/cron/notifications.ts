@@ -35,7 +35,7 @@ export async function runWeeklySummary(env: Env, now = new Date()): Promise<void
   const deadlineLines = (deadlines.results as Record<string, unknown>[]).map((row) => `• ${row.acronym} ${row.year} ${row.deadline_type}: ${String(row.deadline_at).slice(0, 16)}${row.is_aoe ? ' AoE' : ''}`);
   const recentLines = (recent.results as Record<string, unknown>[]).map((row) => `• ${row.acronym} ${row.year}`);
   const unconfirmedLines = (unconfirmed.results as Record<string, unknown>[]).map((row) => `• ${row.acronym} ${row.year}`);
-  const sections = ['📅 今週の学会機会まとめ'];
+  const sections = ['📅 今週の学会まとめ'];
   if (deadlineLines.length) sections.push(`今後90日以内の締切\n${deadlineLines.join('\n')}`);
   if (recentLines.length) sections.push(`最近追加\n${recentLines.join('\n')}`);
   if (unconfirmedLines.length) sections.push(`要確認\n${unconfirmedLines.join('\n')}`);

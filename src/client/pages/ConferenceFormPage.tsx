@@ -35,7 +35,7 @@ export function ConferenceFormPage() {
   }
 
   const update = (key: keyof typeof form, value: string) => setForm({ ...form, [key]: value });
-  return <><PageHeader eyebrow={id ? 'Edit conference' : 'New conference'} title={id ? '学会情報を編集' : '学会を追加'} description="年度ごとの開催日や締切は、学会を保存した後に開催回として追加します。" />
+  return <><PageHeader title={id ? '学会情報を編集' : '学会を追加'} description="年度ごとの開催日や締切は、学会を保存した後に開催回として追加します。" />
     <form onSubmit={submit} className="mx-auto max-w-3xl space-y-5">
       {message && <div className="rounded-xl border border-amber-200 bg-amber-50 p-4 text-sm text-amber-900">{message}</div>}
       <fieldset className="surface p-5 sm:p-7"><legend className="px-2 text-lg font-black text-forest-950">基本情報</legend><div className="grid gap-5 sm:grid-cols-3">
