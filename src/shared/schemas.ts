@@ -1,5 +1,6 @@
 import { z } from 'zod';
 import { ATTENDANCE_FORMATS, CONFERENCE_TYPES, DEADLINE_TYPES, FREQUENCIES, INFORMATION_STATUSES } from './constants';
+import { isValidTimeZone } from './timezone';
 
 const optionalText = (max: number) => z.string().trim().max(max).nullable().optional();
 const url = z.url('正しいURLを入力してください。').max(2048);
@@ -47,6 +48,10 @@ export const deadlineSchema = z.object({
   information_status: z.enum(INFORMATION_STATUSES).default('未確認'),
   notification_enabled: z.boolean().default(true),
   version: z.number().int().positive().optional()
+}).superRefine((data, ctx) => {
+  if (!data.has_time || data.is_aoe || !data.deadline_at.includes('T')) return;
+  if (!data.timezone) ctx.addIssue({ code: 'custom', path: ['timezone'], message: '時刻を入力した場合はタイムゾーンも指定してください。' });
+  else if (!isValidTimeZone(data.timezone)) ctx.addIssue({ code: 'custom', path: ['timezone'], message: 'IANA形式のタイムゾーンを入力してください。' });
 });
 
 export const deadlineBatchSchema = z.object({

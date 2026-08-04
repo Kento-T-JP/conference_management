@@ -1,4 +1,5 @@
 import { DEADLINE_TYPES } from '../../shared/constants';
+import { isValidTimeZone, JAPAN_TIME_ZONE, zonedLocalDateTimeToDate } from '../../shared/timezone';
 import { createDeadlineDraft, deadlineLabel, deadlineName, type DeadlineDraft } from '../lib/deadlineDraft';
 import { OfficialConfirmation } from './ui';
 
@@ -13,7 +14,9 @@ const COMMON_TIMEZONES = [
   { value: 'UTC', label: 'UTC', detail: '協定世界時' },
   { value: 'America/New_York', label: '米国東部', detail: 'ET' },
   { value: 'America/Los_Angeles', label: '米国西部', detail: 'PT' },
-  { value: 'Europe/London', label: '英国', detail: 'UK time' }
+  { value: 'Europe/London', label: '英国', detail: 'UK time' },
+  { value: 'Europe/Paris', label: '中央ヨーロッパ', detail: 'CET / CEST' },
+  { value: 'Asia/Singapore', label: 'シンガポール', detail: 'SGT / UTC+8' }
 ];
 
 const browserTimezone = (() => {
@@ -36,14 +39,14 @@ export function DeadlinePicker({ drafts, onChange, selectable = true }: { drafts
       <div className={`grid gap-4 ${selectable ? 'md:grid-cols-3' : 'md:grid-cols-2 lg:grid-cols-4'}`}>
         {!selectable && <label><span className="label">種類 <Required /></span><select className="field" value={draft.deadline_type} onChange={(event) => update(index, { deadline_type: event.target.value })}>{DEADLINE_TYPES.map((type) => <option key={type} value={type}>{deadlineLabel(type)}</option>)}</select></label>}
         <label><span className="label">日付 <Required /></span><input required className="field" type="date" value={draft.date} onChange={(event) => update(index, { date: event.target.value })} /></label>
-        <label><span className="label">時刻 <Optional /></span><input className="field" type="time" step="60" value={draft.time} onChange={(event) => update(index, { time: event.target.value })} disabled={draft.is_aoe} /><span className="field-hint">公式サイトに時刻がなければ空欄で構いません。</span></label>
-        <label><span className="label">タイムゾーン <Optional /></span><input list="timezone-options" className="field" placeholder="例：Asia/Tokyo" value={draft.is_aoe ? 'AoE' : draft.timezone} onChange={(event) => update(index, { timezone: event.target.value })} disabled={draft.is_aoe} /><span className="field-hint">時刻を入力した場合は、公式表記に合う地域を選びます。</span></label>
+        <label><span className="label">時刻 <Optional /></span><input className="field" type="time" step="60" value={draft.time} onChange={(event) => update(index, { time: event.target.value, timezone: event.target.value && !draft.timezone ? browserTimezone : draft.timezone })} disabled={draft.is_aoe} /><span className="field-hint">時刻を入れると、この端末のタイムゾーンを自動選択します。</span></label>
+        <label><span className="label">タイムゾーン <Optional /></span><input list="timezone-options" className="field" placeholder="例：Asia/Tokyo" value={draft.is_aoe ? 'AoE' : draft.timezone} onChange={(event) => update(index, { timezone: event.target.value })} disabled={draft.is_aoe} aria-invalid={Boolean(draft.timezone) && !isValidTimeZone(draft.timezone)} /><span className="field-hint">候補外もIANA名で直接入力できます（例：Asia/Shanghai）。</span></label>
       </div>
       <div className="mt-4 grid gap-4 lg:grid-cols-2">
         <div className="rounded-2xl border border-slate-200 bg-white/65 p-4">
           <p className="text-xs font-black text-forest-950">時刻をすばやく入力</p>
           <div className="mt-3 grid grid-cols-2 gap-2 sm:grid-cols-4">
-            {TIME_PRESETS.map((preset) => <button key={preset.value} type="button" className={`rounded-xl border px-3 py-2 text-left transition ${draft.time === preset.value && !draft.is_aoe ? 'border-forest-700 bg-forest-50 text-forest-950' : 'border-slate-200 bg-white text-slate-600 hover:border-forest-700/40'}`} aria-pressed={draft.time === preset.value && !draft.is_aoe} onClick={() => update(index, { time: preset.value })} disabled={draft.is_aoe}><strong className="block text-sm">{preset.label}</strong><small className="text-[.68rem]">{preset.detail}</small></button>)}
+            {TIME_PRESETS.map((preset) => <button key={preset.value} type="button" className={`rounded-xl border px-3 py-2 text-left transition ${draft.time === preset.value && !draft.is_aoe ? 'border-forest-700 bg-forest-50 text-forest-950' : 'border-slate-200 bg-white text-slate-600 hover:border-forest-700/40'}`} aria-pressed={draft.time === preset.value && !draft.is_aoe} onClick={() => update(index, { time: preset.value, timezone: draft.timezone || browserTimezone })} disabled={draft.is_aoe}><strong className="block text-sm">{preset.label}</strong><small className="text-[.68rem]">{preset.detail}</small></button>)}
             <button type="button" className={`rounded-xl border px-3 py-2 text-left transition ${!draft.time && !draft.is_aoe ? 'border-forest-700 bg-forest-50 text-forest-950' : 'border-slate-200 bg-white text-slate-600 hover:border-forest-700/40'}`} aria-pressed={!draft.time && !draft.is_aoe} onClick={() => update(index, { time: '', timezone: '' })} disabled={draft.is_aoe}><strong className="block text-sm">時刻なし</strong><small className="text-[.68rem]">日付のみ</small></button>
           </div>
         </div>
@@ -55,6 +58,7 @@ export function DeadlinePicker({ drafts, onChange, selectable = true }: { drafts
         </div>
       </div>
       {draft.time && !draft.timezone && !draft.is_aoe && <p className="mt-3 rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-xs font-semibold leading-5 text-amber-900" role="alert">時刻を正しく解釈できるよう、タイムゾーンも選択してください。</p>}
+      {draft.timezone && !draft.is_aoe && !isValidTimeZone(draft.timezone) && <p className="mt-3 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-xs font-semibold leading-5 text-red-800" role="alert">タイムゾーンを認識できません。Asia/TokyoのようなIANA名で入力してください。</p>}
       <div className="mt-4 grid gap-4">
         <label><span className="label">表示名 <Optional /></span><input className="field" placeholder="区別が必要な場合のみ" value={draft.title} onChange={(event) => update(index, { title: event.target.value })} /></label>
       </div>
@@ -69,7 +73,12 @@ function deadlineSummary(draft: DeadlineDraft) {
   if (!draft.date) return '日付を選択してください。';
   if (draft.is_aoe) return `${draft.date}（AoE：世界のどこかでその日が終わるまで）`;
   if (!draft.time) return `${draft.date}（時刻指定なし）`;
-  return `${draft.date} ${draft.time}（${draft.timezone || 'タイムゾーン未選択'}）`;
+  if (!draft.timezone) return `${draft.date} ${draft.time}（タイムゾーン未選択）`;
+  if (!isValidTimeZone(draft.timezone)) return `${draft.date} ${draft.time}（タイムゾーンを確認してください）`;
+  const instant = zonedLocalDateTimeToDate(`${draft.date}T${draft.time}`, draft.timezone);
+  if (!instant) return `${draft.date} ${draft.time}（存在しない現地時刻です）`;
+  const japanTime = new Intl.DateTimeFormat('ja-JP', { timeZone: JAPAN_TIME_ZONE, year: 'numeric', month: 'numeric', day: 'numeric', hour: '2-digit', minute: '2-digit', hour12: false }).format(instant);
+  return `${draft.date} ${draft.time}（${draft.timezone}）→ カレンダーでは ${japanTime} JST`;
 }
 
 function Required() { return <span className="text-xs text-red-700">必須</span>; }

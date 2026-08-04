@@ -3,11 +3,13 @@ import dayGridPlugin from '@fullcalendar/daygrid';
 import interactionPlugin, { type DateClickArg } from '@fullcalendar/interaction';
 import multiMonthPlugin from '@fullcalendar/multimonth';
 import timeGridPlugin from '@fullcalendar/timegrid';
+import luxonPlugin from '@fullcalendar/luxon3';
 import jaLocale from '@fullcalendar/core/locales/ja';
 import type { DatesSetArg, EventClickArg, EventContentArg, EventSourceFuncArg } from '@fullcalendar/core';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { CALENDAR_EVENT_GROUPS, CONFERENCE_TYPES } from '../../shared/constants';
+import { JAPAN_TIME_ZONE } from '../../shared/timezone';
 import { api, queryString } from '../lib/api';
 import { deadlineName } from '../lib/deadlineDraft';
 import { PageHeader } from '../components/ui';
@@ -19,7 +21,7 @@ interface CalendarEvent {
   end?: string;
   allDay: boolean;
   url: string;
-  extendedProps: { kind: string; status: string; deadlineType?: string; aoe?: boolean; editionId?: number; conferenceName?: string };
+  extendedProps: { kind: string; status: string; deadlineType?: string; aoe?: boolean; editionId?: number; conferenceName?: string; sourceTimezone?: string };
 }
 
 const viewOptions = [
@@ -130,7 +132,7 @@ export function CalendarPage() {
           <button type="button" onClick={() => move('prev')} aria-label="前の期間">‹</button>
           <button type="button" onClick={() => move('next')} aria-label="次の期間">›</button>
         </div>
-        <h2>{calendarTitle}</h2>
+        <div className="calendar-title"><h2>{calendarTitle}</h2><span>JST</span></div>
         <label className="calendar-search"><span className="sr-only">予定を検索</span><span aria-hidden="true">⌕</span><input value={search} onChange={(event) => setSearch(event.target.value)} placeholder="学会名・締切を検索" /></label>
         <label className="calendar-view-select"><span className="sr-only">表示形式</span><select value={view} onChange={(event) => changeView(event.target.value)}>{viewOptions.map((option) => <option key={option.value} value={option.value}>{option.label}</option>)}</select></label>
       </div>
@@ -146,10 +148,11 @@ export function CalendarPage() {
         <div className="calendar-main">
           <FullCalendar
             ref={calendarRef}
-            plugins={[dayGridPlugin, timeGridPlugin, interactionPlugin, multiMonthPlugin]}
+            plugins={[dayGridPlugin, timeGridPlugin, interactionPlugin, multiMonthPlugin, luxonPlugin]}
             initialView="dayGridMonth"
             locales={[jaLocale]}
             locale="ja"
+            timeZone={JAPAN_TIME_ZONE}
             firstDay={1}
             height="auto"
             headerToolbar={false}
@@ -165,6 +168,7 @@ export function CalendarPage() {
             scrollTime="08:00:00"
             slotDuration="00:30:00"
             eventTimeFormat={{ hour: '2-digit', minute: '2-digit', hour12: false }}
+            defaultTimedEventDuration="00:00:01"
             events={eventSource}
             datesSet={updateTitle}
             dateClick={handleDateClick}
@@ -189,7 +193,7 @@ function renderEvent(arg: EventContentArg) {
 }
 
 function EventDetail({ event, onOpen }: { event: CalendarEvent; onOpen: () => void }) {
-  return <><p className="section-kicker">{groupLabel(event.extendedProps.kind)}</p><h2 className="mt-2 pr-10 text-2xl font-black text-forest-950">{cleanEventTitle(event.title)}</h2>{event.extendedProps.conferenceName && <p className="mt-2 text-sm text-slate-500">{event.extendedProps.conferenceName}</p>}<div className="mt-5 flex gap-3"><span className={`calendar-detail-color calendar-detail-color--${event.extendedProps.kind}`} /><div><p className="font-bold">{formatCalendarDate(event.start, event.allDay)}</p>{event.end && <p className="mt-1 text-sm text-slate-500">終了：{formatCalendarEndDate(event.end, event.allDay)}</p>}{event.extendedProps.aoe && <p className="mt-1 text-sm text-slate-500">AoE（世界のどこかでその日が終わるまで）</p>}</div></div><dl className={`mt-6 grid gap-3 text-sm ${event.extendedProps.status === '公式' ? 'grid-cols-2' : 'grid-cols-1'}`}><div className="rounded-2xl bg-slate-50 p-3"><dt className="text-xs font-bold text-slate-400">種類</dt><dd className="mt-1 font-bold">{event.extendedProps.deadlineType ?? groupLabel(event.extendedProps.kind)}</dd></div>{event.extendedProps.status === '公式' && <div className="rounded-2xl bg-emerald-50 p-3"><dt className="text-xs font-bold text-emerald-700">確認</dt><dd className="mt-1 font-bold text-emerald-900">公式サイトで確認済み</dd></div>}</dl><button type="button" className="btn-primary mt-7 w-full" onClick={onOpen}>学会の詳細・管理へ</button></>;
+  return <><p className="section-kicker">{groupLabel(event.extendedProps.kind)}</p><h2 className="mt-2 pr-10 text-2xl font-black text-forest-950">{cleanEventTitle(event.title)}</h2>{event.extendedProps.conferenceName && <p className="mt-2 text-sm text-slate-500">{event.extendedProps.conferenceName}</p>}<div className="mt-5 flex gap-3"><span className={`calendar-detail-color calendar-detail-color--${event.extendedProps.kind}`} /><div><p className="font-bold">{formatCalendarDate(event.start, event.allDay)}</p>{!event.allDay && <p className="mt-1 text-xs font-semibold text-slate-500">カレンダー表示：日本標準時（JST）</p>}{event.extendedProps.sourceTimezone && event.extendedProps.sourceTimezone !== JAPAN_TIME_ZONE && <p className="mt-1 text-xs text-slate-500">登録元：{event.extendedProps.sourceTimezone}</p>}{event.end && <p className="mt-1 text-sm text-slate-500">終了：{formatCalendarEndDate(event.end, event.allDay)}</p>}{event.extendedProps.aoe && <p className="mt-1 text-sm text-slate-500">AoE（世界のどこかでその日が終わるまで）</p>}</div></div><dl className={`mt-6 grid gap-3 text-sm ${event.extendedProps.status === '公式' ? 'grid-cols-2' : 'grid-cols-1'}`}><div className="rounded-2xl bg-slate-50 p-3"><dt className="text-xs font-bold text-slate-400">種類</dt><dd className="mt-1 font-bold">{event.extendedProps.deadlineType ?? groupLabel(event.extendedProps.kind)}</dd></div>{event.extendedProps.status === '公式' && <div className="rounded-2xl bg-emerald-50 p-3"><dt className="text-xs font-bold text-emerald-700">確認</dt><dd className="mt-1 font-bold text-emerald-900">公式サイトで確認済み</dd></div>}</dl><button type="button" className="btn-primary mt-7 w-full" onClick={onOpen}>学会の詳細・管理へ</button></>;
 }
 
 function DayDetail({ date, events, onSelect }: { date: string; events: CalendarEvent[]; onSelect: (event: CalendarEvent) => void }) {
@@ -207,17 +211,17 @@ function cleanEventTitle(title: string) { return title.replace(/^\[[^\]]+\]\s*/,
 function groupLabel(kind: string) { return CALENDAR_EVENT_GROUPS.find((group) => group.id === kind)?.label ?? '予定'; }
 
 function formatCalendarDate(value: string, allDay: boolean) {
-  const date = new Date(allDay ? `${value.slice(0, 10)}T00:00:00` : value);
-  return new Intl.DateTimeFormat('ja-JP', allDay ? { year: 'numeric', month: 'long', day: 'numeric', weekday: 'short' } : { year: 'numeric', month: 'long', day: 'numeric', weekday: 'short', hour: '2-digit', minute: '2-digit' }).format(date);
+  const date = new Date(allDay ? `${value.slice(0, 10)}T00:00:00+09:00` : value);
+  return new Intl.DateTimeFormat('ja-JP', allDay ? { timeZone: JAPAN_TIME_ZONE, year: 'numeric', month: 'long', day: 'numeric', weekday: 'short' } : { timeZone: JAPAN_TIME_ZONE, year: 'numeric', month: 'long', day: 'numeric', weekday: 'short', hour: '2-digit', minute: '2-digit' }).format(date);
 }
 
 function formatCalendarEndDate(value: string, allDay: boolean) {
   if (!allDay) return formatCalendarDate(value, false);
-  const date = new Date(`${value.slice(0, 10)}T00:00:00`);
-  date.setDate(date.getDate() - 1);
-  return new Intl.DateTimeFormat('ja-JP', { year: 'numeric', month: 'long', day: 'numeric', weekday: 'short' }).format(date);
+  const date = new Date(`${value.slice(0, 10)}T00:00:00+09:00`);
+  date.setUTCDate(date.getUTCDate() - 1);
+  return new Intl.DateTimeFormat('ja-JP', { timeZone: JAPAN_TIME_ZONE, year: 'numeric', month: 'long', day: 'numeric', weekday: 'short' }).format(date);
 }
 
 function formatDayHeading(date: string) {
-  return new Intl.DateTimeFormat('ja-JP', { month: 'long', day: 'numeric', weekday: 'long' }).format(new Date(`${date}T00:00:00`));
+  return new Intl.DateTimeFormat('ja-JP', { timeZone: JAPAN_TIME_ZONE, month: 'long', day: 'numeric', weekday: 'long' }).format(new Date(`${date}T00:00:00+09:00`));
 }

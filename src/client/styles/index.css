@@ -178,7 +178,9 @@ a { color: inherit; }
 
 .calendar-app { @apply overflow-hidden rounded-[1.6rem] border border-slate-200/80 bg-white shadow-[0_22px_65px_-42px_rgba(16,39,31,.6)]; }
 .calendar-commandbar { @apply grid min-h-20 grid-cols-[auto_auto_minmax(12rem,1fr)_minmax(13rem,20rem)_auto] items-center gap-3 border-b border-slate-200 px-4 sm:px-5; }
-.calendar-commandbar h2 { @apply min-w-0 truncate pl-2 text-xl font-black tracking-[-.035em] text-forest-950; }
+.calendar-title { @apply flex min-w-0 items-center gap-2 pl-2; }
+.calendar-title h2 { @apply min-w-0 truncate text-xl font-black tracking-[-.035em] text-forest-950; }
+.calendar-title span { @apply rounded-full bg-forest-50 px-2 py-1 text-[.62rem] font-black tracking-[.08em] text-forest-700; }
 .calendar-today-button { @apply min-h-10 rounded-full border border-slate-300 bg-white px-5 text-sm font-black text-forest-950 transition hover:bg-slate-50; }
 .calendar-nav-buttons { @apply flex items-center; }
 .calendar-nav-buttons button { @apply grid size-10 place-items-center rounded-full text-2xl text-slate-600 transition hover:bg-slate-100 hover:text-forest-950; }
@@ -230,14 +232,14 @@ a { color: inherit; }
 .fc .fc-daygrid-day-frame { min-height: 7rem; }
 .fc .fc-daygrid-day:hover { background: #fbfdfc; }
 .fc .fc-event { @apply cursor-pointer rounded-md border-0 px-1.5 py-1 shadow-none transition hover:brightness-95; }
-.fc .calendar-event--submission { background: #dcece5; color: #174b39; }
-.fc .calendar-event--notification { background: #dceaf7; color: #245783; }
-.fc .calendar-event--camera_ready { background: #ebe3f1; color: #5d3c76; }
-.fc .calendar-event--registration { background: #f8e4d9; color: #8a4828; }
-.fc .calendar-event--conference { background: #e7ebee; color: #374151; }
+.fc .calendar-event--submission { background: #2c6652; color: #fff; }
+.fc .calendar-event--notification { background: #3973a8; color: #fff; }
+.fc .calendar-event--camera_ready { background: #76558f; color: #fff; }
+.fc .calendar-event--registration { background: #a94a24; color: #fff; }
+.fc .calendar-event--conference { background: #52606d; color: #fff; }
 .fc .fc-timegrid-event { @apply px-1 py-0.5; }
 .calendar-event-content { @apply flex min-w-0 items-center gap-1.5 overflow-hidden text-[.72rem] leading-4; }
-.calendar-event-content time { @apply shrink-0 font-semibold opacity-70; }
+.calendar-event-content time { @apply shrink-0 font-bold opacity-90; }
 .calendar-event-content strong { @apply truncate font-black; }
 .calendar-event-dot { @apply size-1.5 shrink-0 rounded-full bg-current; }
 .fc .fc-more-link { @apply pl-1 text-xs font-black text-forest-700; }
@@ -253,7 +255,8 @@ a { color: inherit; }
   body::before { opacity: .14; }
   .dashboard-hero { min-height: auto; border-radius: 1.6rem; }
   .calendar-commandbar { @apply grid-cols-[auto_auto_1fr_auto] gap-2 py-3; }
-  .calendar-commandbar h2 { @apply pl-0 text-base; }
+  .calendar-title { @apply pl-0; }
+  .calendar-title h2 { @apply text-base; }
   .calendar-search { @apply col-span-4 row-start-2; }
   .calendar-today-button { @apply px-3; }
   .calendar-nav-buttons button { @apply size-9; }

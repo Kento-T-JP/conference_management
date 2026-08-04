@@ -9,6 +9,7 @@ interface ReminderRow extends Record<string, unknown> {
   deadline_type: string;
   has_time: number;
   is_aoe: number;
+  timezone: string | null;
   year: number;
   acronym: string;
 }
@@ -18,7 +19,7 @@ export async function runDailyReminders(env: Env, now = new Date()): Promise<voi
   const reminderDays: number[] = setting ? JSON.parse(setting.value) : [14, 7, 1];
   const rows = await env.DB.prepare(`SELECT d.*, e.year, c.acronym FROM conference_deadlines d JOIN conference_editions e ON e.id=d.conference_edition_id JOIN conferences c ON c.id=e.conference_id WHERE d.notification_enabled=1 AND e.is_archived=0 AND c.is_archived=0 AND d.deadline_at >= datetime('now','-1 day') AND d.deadline_at <= datetime('now','+15 days')`).all<ReminderRow>();
   for (const row of rows.results) {
-    const days = daysUntil(row.deadline_at, now, Boolean(row.is_aoe), Boolean(row.has_time));
+    const days = daysUntil(row.deadline_at, now, Boolean(row.is_aoe), Boolean(row.has_time), row.timezone);
     if (!reminderDays.includes(days)) continue;
     await sendSlack(env, { type: `deadline_reminder_${days}`, editionId: row.conference_edition_id, deadlineId: row.id, scheduledDate: now.toISOString().slice(0, 10), text: reminderMessage(row, days, env.APP_BASE_URL) });
   }
