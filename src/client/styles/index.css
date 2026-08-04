@@ -48,6 +48,12 @@ a { color: inherit; }
   @apply w-full rounded-2xl border border-[#d9d6ce] bg-[#fbfaf7] px-4 py-3 text-sm shadow-[inset_0_1px_0_rgba(255,255,255,.9)] transition placeholder:text-slate-400 focus:border-forest-700 focus:bg-white focus:ring-4 focus:ring-forest-100/70;
 }
 .label { @apply mb-2 block text-[.72rem] font-black uppercase tracking-[.08em] text-slate-600; }
+.field-hint { @apply mt-2 block text-xs font-medium leading-5 text-slate-500; }
+.nav-item-active,
+.nav-item-active:hover {
+  color: #fff !important;
+  background-color: #10271f !important;
+}
 .btn-primary {
   @apply inline-flex min-h-11 items-center justify-center rounded-full bg-[#e36f50] px-5 py-2 text-sm font-black text-white shadow-[0_10px_25px_-12px_rgba(227,111,80,.9)] transition duration-200 hover:-translate-y-0.5 hover:bg-[#cf5e42] disabled:cursor-not-allowed disabled:opacity-50;
 }
@@ -81,10 +87,13 @@ a { color: inherit; }
   content: "";
   box-shadow: 0 0 0 3rem rgba(255,255,255,.025), 0 0 0 7rem rgba(255,255,255,.025);
 }
-.hero-count {
-  @apply relative z-10 grid size-36 shrink-0 place-items-center rounded-full border border-white/20 bg-white/10 text-center backdrop-blur-md sm:size-44;
+.hero-focus-card {
+  @apply relative z-10 w-full shrink-0 rounded-[1.6rem] border border-white/20 bg-white/10 p-5 backdrop-blur-md sm:w-72 sm:p-6;
   box-shadow: inset 0 1px 0 rgba(255,255,255,.18);
 }
+.form-section { @apply rounded-[1.35rem] border border-slate-200/80 bg-[#fbfaf7]/80 p-4 sm:p-5; }
+.choice-card { @apply flex cursor-pointer gap-3 rounded-2xl border border-slate-200 bg-white/70 p-4 transition hover:border-forest-700/40 hover:bg-white; }
+.choice-card:has(input:checked) { @apply border-forest-700/40 bg-forest-50; }
 .bento-card { @apply relative overflow-hidden rounded-[1.55rem] border border-white/80 p-5 shadow-[0_18px_45px_-34px_rgba(16,39,31,.45)] sm:p-6; }
 .bento-card::after { position: absolute; top: 0; right: 0; width: 5rem; height: 5rem; border-radius: 0 0 0 5rem; background: rgba(255,255,255,.3); content: ""; }
 

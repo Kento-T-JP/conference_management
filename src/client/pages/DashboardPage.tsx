@@ -12,10 +12,25 @@ export function DashboardPage() {
     const diff = (new Date(item.next_deadline).getTime() - Date.now()) / 86_400_000;
     return diff >= 0 && diff <= days;
   });
+  const nextDeadline = data.deadlines[0];
+  const nextEdition = data.upcoming_editions[0];
   return <>
     <section className="dashboard-hero mb-5 flex flex-col justify-between gap-8 sm:flex-row sm:items-end">
       <div className="relative z-10 max-w-2xl"><p className="mb-5 text-[.68rem] font-black uppercase tracking-[.25em] text-white/55">Shinomiya Laboratory</p><h1 className="text-4xl font-black leading-[1.04] tracking-[-.055em] sm:text-6xl">次の締切を、<br />ひと目で。</h1><p className="mt-5 max-w-lg text-sm font-medium leading-7 text-white/70 sm:text-base">篠宮研究室の学会情報から、直近の締切と確認が必要な項目をまとめています。</p><Link to="/conferences/new" className="btn-primary mt-7">＋ 新規登録をはじめる</Link></div>
-      <div className="hero-count"><div><strong className="block text-5xl font-black tracking-[-.06em]">{within(90).length}</strong><span className="mt-1 block text-[.62rem] font-black uppercase tracking-[.18em] text-white/60">Next 90 days</span></div></div>
+      <div className="hero-focus-card">
+        <p className="text-[.62rem] font-black uppercase tracking-[.2em] text-white/55">次の予定</p>
+        {nextDeadline ? <Link to={`/editions/${nextDeadline.id}`} className="mt-4 block rounded-2xl outline-none transition hover:bg-white/5 focus-visible:bg-white/5">
+          <div className="flex flex-wrap items-baseline gap-2"><strong className="text-2xl font-black tracking-[-.04em]">{nextDeadline.acronym}</strong><span className="text-sm font-bold text-white/60">{nextDeadline.year}</span></div>
+          <p className="mt-2 text-sm font-bold text-white/80">{nextDeadline.next_deadline_type}</p>
+          <p className="mt-1 text-sm text-white/65">{formatDate(nextDeadline.next_deadline, true)}{Boolean((nextDeadline as unknown as { is_aoe: number }).is_aoe) && ' (AoE)'}</p>
+          <span className="mt-4 inline-flex text-xs font-black text-[#ffd4c8]">詳細を見る →</span>
+        </Link> : nextEdition ? <Link to={`/editions/${nextEdition.id}`} className="mt-4 block rounded-2xl outline-none transition hover:bg-white/5 focus-visible:bg-white/5">
+          <div className="flex flex-wrap items-baseline gap-2"><strong className="text-2xl font-black tracking-[-.04em]">{nextEdition.acronym}</strong><span className="text-sm font-bold text-white/60">{nextEdition.year}</span></div>
+          <p className="mt-2 text-sm font-bold text-white/80">開催予定</p>
+          <p className="mt-1 text-sm text-white/65">{formatDate(nextEdition.start_date)} · {[nextEdition.city, nextEdition.country].filter(Boolean).join(', ') || '開催地未定'}</p>
+          <span className="mt-4 inline-flex text-xs font-black text-[#ffd4c8]">詳細を見る →</span>
+        </Link> : <div className="mt-4"><p className="text-lg font-black">予定は未登録です</p><p className="mt-2 text-sm leading-6 text-white/65">学会と開催回を登録すると、次に確認すべき予定をここに表示します。</p></div>}
+      </div>
     </section>
     <section className="grid gap-4 sm:grid-cols-3" aria-label="締切サマリー">
       <SummaryCard label="7日以内" value={within(7).length} tone="urgent" />

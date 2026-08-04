@@ -33,5 +33,5 @@ export function Layout() {
 }
 
 function NavItem({ to, label, mobile, onClick }: { to: string; label: string; mobile?: boolean; onClick?: () => void }) {
-  return <NavLink to={to} end={to === '/'} onClick={onClick} className={({ isActive }) => `${mobile ? 'block px-3 py-3' : 'rounded-full px-3.5 py-2'} text-sm font-bold transition ${isActive ? 'bg-forest-950 text-white shadow-sm' : 'text-forest-900/65 hover:bg-white/70 hover:text-forest-950'}`}>{label}</NavLink>;
+  return <NavLink to={to} end={to === '/'} onClick={onClick} className={({ isActive }) => `${mobile ? 'block px-3 py-3' : 'rounded-full px-3.5 py-2'} text-sm font-bold transition ${isActive ? 'nav-item-active shadow-sm' : 'text-forest-900/65 hover:bg-white/70 hover:text-forest-950'}`}>{label}</NavLink>;
 }
