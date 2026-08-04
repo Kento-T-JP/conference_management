@@ -7,6 +7,7 @@ import { deadlineRoutes } from './routes/deadlines';
 import { editionRoutes } from './routes/editions';
 import { exportRoutes } from './routes/export';
 import { opportunityRoutes } from './routes/opportunities';
+import { settingsRoutes } from './routes/settings';
 
 export interface Env {
   DB: D1Database;
@@ -35,6 +36,7 @@ app.route('/api/conferences', conferenceRoutes);
 app.route('/api/editions', editionRoutes);
 app.route('/api/deadlines', deadlineRoutes);
 app.route('/api', opportunityRoutes);
+app.route('/api/settings', settingsRoutes);
 app.route('/api/export', exportRoutes);
 
 export default {

@@ -1,5 +1,6 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import type { Env } from '../src/worker';
+import { runWeeklySummary } from '../src/worker/cron/notifications';
 import { sendSlack } from '../src/worker/services/slack';
 
 interface StoredLog { status: string; responseCode: number | null; errorMessage: string | null; }
@@ -43,5 +44,11 @@ describe('Slack通知', () => {
     const { env, logs } = fakeEnv(); delete env.SLACK_WEBHOOK_URL;
     expect(await sendSlack(env, options)).toBe('skipped');
     expect(logs[0].status).toBe('skipped');
+  });
+  it('週次まとめを無効にすると集計も送信も行わない', async () => {
+    const batch = vi.fn();
+    const DB = { prepare: () => ({ first: async () => ({ value: 'false' }) }), batch } as unknown as D1Database;
+    await runWeeklySummary({ DB, APP_BASE_URL: 'https://example.com', ENVIRONMENT: 'test' }, new Date('2028-01-01T00:00:00Z'));
+    expect(batch).not.toHaveBeenCalled();
   });
 });

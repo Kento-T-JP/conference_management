@@ -5,7 +5,8 @@ const nav = [
   ['/', 'ダッシュボード'],
   ['/conferences', '学会'],
   ['/editions', '開催回'],
-  ['/calendar', 'カレンダー']
+  ['/calendar', 'カレンダー'],
+  ['/settings', '設定']
 ] as const;
 
 export function Layout() {
@@ -18,13 +19,13 @@ export function Layout() {
             <img src="/shinomiya-lab-icon.png" alt="" className="size-11 rounded-full object-cover shadow-[0_8px_20px_-12px_rgba(7,45,85,.9)] ring-1 ring-white" />
             <span><span className="block text-[.95rem] font-black tracking-[-.02em]">学会管理</span><span className="block text-[.6rem] font-bold uppercase tracking-[.14em] text-forest-700">Shinomiya Laboratory</span></span>
           </NavLink>
-          <button className="rounded-full border border-forest-900/15 bg-white/60 px-4 py-2 text-xs font-black sm:hidden" onClick={() => setOpen(!open)} aria-expanded={open} aria-controls="mobile-navigation" aria-label={open ? 'メニューを閉じる' : 'メニューを開く'}>{open ? '閉じる' : 'メニュー'}</button>
-          <nav className="hidden items-center gap-1 sm:flex" aria-label="メインナビゲーション">
+          <button className="rounded-full border border-forest-900/15 bg-white/60 px-4 py-2 text-xs font-black lg:hidden" onClick={() => setOpen(!open)} aria-expanded={open} aria-controls="mobile-navigation" aria-label={open ? 'メニューを閉じる' : 'メニューを開く'}>{open ? '閉じる' : 'メニュー'}</button>
+          <nav className="hidden items-center gap-1 lg:flex" aria-label="メインナビゲーション">
             {nav.map(([to, label]) => <NavItem key={to} to={to} label={label} />)}
             <NavLink to="/conferences/new" className="btn-primary ml-3 min-h-10 px-4">＋ 新規登録</NavLink>
           </nav>
         </div>
-        {open && <nav id="mobile-navigation" className="border-t border-forest-900/10 bg-[#f3f0e9]/95 px-4 pb-4 sm:hidden">{nav.map(([to, label]) => <NavItem key={to} to={to} label={label} mobile onClick={() => setOpen(false)} />)}<NavLink to="/conferences/new" onClick={() => setOpen(false)} className="btn-primary mt-2 w-full">＋ 新規登録</NavLink></nav>}
+        {open && <nav id="mobile-navigation" className="border-t border-forest-900/10 bg-[#f3f0e9]/95 px-4 pb-4 lg:hidden">{nav.map(([to, label]) => <NavItem key={to} to={to} label={label} mobile onClick={() => setOpen(false)} />)}<NavLink to="/conferences/new" onClick={() => setOpen(false)} className="btn-primary mt-2 w-full">＋ 新規登録</NavLink></nav>}
       </header>
       <main className="mx-auto max-w-[88rem] px-4 py-7 sm:px-7 sm:py-11"><Outlet /></main>
       <footer className="mx-auto mt-8 flex max-w-[88rem] items-center justify-between border-t border-forest-900/10 px-4 py-8 text-[.68rem] font-bold uppercase tracking-[.14em] text-slate-500 sm:px-7"><span>Shinomiya Laboratory</span><span>篠宮研究室 学会管理</span></footer>

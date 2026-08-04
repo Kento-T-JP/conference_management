@@ -12,6 +12,7 @@
 - 月間カレンダーで締切、採否通知、最終稿、参加登録、開催期間を表示
 - 開催回の次年度複製と、定期開催学会の次年度未登録検出
 - Slackへの新規開催回、週次まとめ、14日前・7日前・前日、締切変更通知
+- 設定画面でのSlack連携状況、テスト通知、通知タイミング管理
 - 通知履歴による二重送信防止と失敗記録
 - 学会・開催回・締切のCSV、全データJSON出力
 - PC、タブレット、スマートフォン対応
@@ -128,8 +129,9 @@ GitHub RepositoryのSettings → Secrets and variables → Actionsに以下を�
 1. Slack AppでIncoming Webhooksを有効化し、学会情報専用チャンネル用Webhookを作成します。
 2. ローカルでは`.dev.vars`へ設定します。実際のURLはコミットしないでください。
 3. 本番では前述の`wrangler secret put`を使用します。
+4. アプリの「設定」画面を開き、接続状況を確認してテスト通知を送信します。
 
-通知対象は新規開催回、締切変更、締切14日前・7日前・前日、週次まとめです。Slack送信に失敗しても学会・開催回・締切の保存結果は維持され、`notification_logs`へ失敗が残ります。Webhook未設定時は通知を`skipped`として記録します。
+通知対象は新規開催回、締切変更、設定した日数前のリマインド、週次まとめです。リマインド日数と週次まとめの有効・無効は「設定」画面から変更できます。Slack送信に失敗しても学会・開催回・締切の保存結果は維持され、`notification_logs`へ失敗が残ります。Webhook未設定時は通知を`skipped`として記録します。
 
 ## Cron Triggers
 
@@ -170,6 +172,9 @@ JSONには`schema_version`、出力日時、学会、開催回、締切、シス
 - `/api/deadlines/:id`: 締切更新・削除
 - `/api/dashboard/opportunities`: ダッシュボード
 - `/api/calendar/events`: カレンダーイベント
+- `/api/settings/slack`: Slack連携状況と直近の送信結果
+- `/api/settings/notifications`: リマインド日数と週次まとめ設定
+- `/api/settings/slack/test`: Slackテスト通知
 - `/api/export/*`: CSV・JSON出力
 
 APIエラーは`{ "error": { "code", "message", "details" } }`形式です。入力拒否と警告を分離し、締切が開催終了日より後の場合は保存可能な警告として返します。

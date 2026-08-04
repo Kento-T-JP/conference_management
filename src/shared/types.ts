@@ -84,3 +84,17 @@ export interface DashboardData {
   upcoming_editions: ConferenceEdition[];
   missing_next_editions: Array<Conference & { expected_year: number }>;
 }
+
+export interface SlackSettingsData {
+  configured: boolean;
+  reminder_days: number[];
+  weekly_enabled: boolean;
+  last_delivery: {
+    notification_type: string;
+    status: 'sent' | 'failed' | 'skipped' | 'pending';
+    response_code: number | null;
+    error_message: string | null;
+    sent_at: string | null;
+    created_at: string;
+  } | null;
+}

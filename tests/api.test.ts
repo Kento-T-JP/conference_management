@@ -80,4 +80,31 @@ describe('API', () => {
     expect(response.status).toBe(409);
     expect(await response.json()).toEqual({ error: { code: 'DUPLICATE_EDITION', message: '次年度の開催回は既に存在します。' } });
   });
+
+  it('Webhook未設定時はSlackテスト通知を拒否する', async () => {
+    const env = { APP_BASE_URL: 'http://localhost:5173', ENVIRONMENT: 'test', DB: {} as D1Database } satisfies Env;
+    const ctx = { waitUntil() {}, passThroughOnException() {}, props: {} } as unknown as ExecutionContext;
+    const response = await worker.fetch(new Request('http://localhost/api/settings/slack/test', { method: 'POST' }), env, ctx);
+    expect(response.status).toBe(409);
+    expect(await response.json()).toEqual({ error: { code: 'SLACK_NOT_CONFIGURED', message: 'Slack Incoming Webhookが設定されていません。' } });
+  });
+
+  it('Slackの接続状況と通知設定だけを安全に返す', async () => {
+    const db = {
+      prepare(query: string) { return { query }; },
+      async batch() {
+        return [
+          { results: [{ key: 'reminder_days', value: '[14,7,1]' }, { key: 'weekly_enabled', value: 'true' }] },
+          { results: [{ notification_type: 'weekly_summary', status: 'sent', response_code: 200, error_message: null, sent_at: '2028-01-01T00:00:00Z', created_at: '2028-01-01T00:00:00Z' }] }
+        ];
+      }
+    } as unknown as D1Database;
+    const env = { APP_BASE_URL: 'http://localhost:5173', ENVIRONMENT: 'test', SLACK_WEBHOOK_URL: 'https://hooks.slack.test/secret', DB: db } satisfies Env;
+    const ctx = { waitUntil() {}, passThroughOnException() {}, props: {} } as unknown as ExecutionContext;
+    const response = await worker.fetch(new Request('http://localhost/api/settings/slack'), env, ctx);
+    expect(response.status).toBe(200);
+    const body = await response.json() as { data: Record<string, unknown> };
+    expect(body.data).toMatchObject({ configured: true, reminder_days: [14, 7, 1], weekly_enabled: true });
+    expect(JSON.stringify(body)).not.toContain('hooks.slack.test');
+  });
 });

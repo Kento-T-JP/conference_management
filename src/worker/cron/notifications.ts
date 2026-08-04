@@ -26,6 +26,8 @@ export async function runDailyReminders(env: Env, now = new Date()): Promise<voi
 }
 
 export async function runWeeklySummary(env: Env, now = new Date()): Promise<void> {
+  const enabled = await env.DB.prepare("SELECT value FROM system_settings WHERE key='weekly_enabled'").first<{ value: string }>();
+  if (enabled?.value === 'false') return;
   const [deadlines, recent] = await env.DB.batch([
     env.DB.prepare(`SELECT d.deadline_at, d.deadline_type, d.is_aoe, e.id edition_id, e.year, c.acronym FROM conference_deadlines d JOIN conference_editions e ON e.id=d.conference_edition_id JOIN conferences c ON c.id=e.conference_id WHERE d.notification_enabled=1 AND e.is_archived=0 AND c.is_archived=0 AND d.deadline_at >= datetime('now') AND d.deadline_at < datetime('now','+90 days') ORDER BY d.deadline_at LIMIT 20`),
     env.DB.prepare(`SELECT e.id, e.year, c.acronym FROM conference_editions e JOIN conferences c ON c.id=e.conference_id WHERE e.created_at >= datetime('now','-7 days') ORDER BY e.created_at DESC LIMIT 10`)

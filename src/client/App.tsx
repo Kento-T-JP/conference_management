@@ -9,6 +9,7 @@ import { DashboardPage } from './pages/DashboardPage';
 import { EditionDetailPage } from './pages/EditionDetailPage';
 import { EditionFormPage } from './pages/EditionFormPage';
 import { EditionsPage } from './pages/EditionsPage';
+import { SettingsPage } from './pages/SettingsPage';
 
 const CalendarPage = lazy(() => import('./pages/CalendarPage').then((module) => ({ default: module.CalendarPage })));
 
@@ -24,6 +25,7 @@ export function App() {
     <Route path="editions/:id" element={<EditionDetailPage />} />
     <Route path="editions/:id/edit" element={<EditionFormPage />} />
     <Route path="calendar" element={<Suspense fallback={<Loading />}><CalendarPage /></Suspense>} />
+    <Route path="settings" element={<SettingsPage />} />
     <Route path="*" element={<Navigate to="/" replace />} />
   </Route></Routes>;
 }
