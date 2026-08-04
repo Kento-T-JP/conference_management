@@ -25,7 +25,10 @@ conferenceRoutes.get('/', async (c) => {
     const sql = `SELECT c.*,
       (SELECT MAX(year) FROM conference_editions e WHERE e.conference_id=c.id AND e.is_archived=0) latest_year,
       (SELECT MIN(d.deadline_at) FROM conference_deadlines d JOIN conference_editions e ON e.id=d.conference_edition_id WHERE e.conference_id=c.id AND e.is_archived=0 AND d.deadline_at >= datetime('now')) next_deadline,
-      (SELECT e.id FROM conference_editions e LEFT JOIN conference_deadlines d ON d.conference_edition_id=e.id WHERE e.conference_id=c.id AND e.is_archived=0 ORDER BY CASE WHEN d.deadline_at >= datetime('now') THEN 0 ELSE 1 END, d.deadline_at LIMIT 1) next_edition_id
+      (SELECT e.id FROM conference_editions e WHERE e.conference_id=c.id AND e.is_archived=0 ORDER BY
+        CASE WHEN EXISTS (SELECT 1 FROM conference_deadlines d WHERE d.conference_edition_id=e.id AND d.deadline_at >= datetime('now')) THEN 0
+          WHEN COALESCE(e.end_date,e.start_date) >= date('now') THEN 1 ELSE 2 END,
+        COALESCE((SELECT MIN(d.deadline_at) FROM conference_deadlines d WHERE d.conference_edition_id=e.id AND d.deadline_at >= datetime('now')),'9999-12-31'), e.year DESC LIMIT 1) next_edition_id
       FROM conferences c WHERE ${clauses.join(' AND ')} ORDER BY c.updated_at DESC, c.acronym`;
     const result = await c.env.DB.prepare(sql).bind(...values).all<Record<string, unknown>>();
     return c.json({ data: result.results.map(mapConference) });

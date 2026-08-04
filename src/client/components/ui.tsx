@@ -20,8 +20,10 @@ export function DeadlineBadge({ date, aoe, hasTime }: { date: string; aoe?: bool
   return <span className={`chip ${label === '締切済み' ? 'bg-slate-100 text-slate-500' : urgent ? 'bg-red-100 text-red-800' : 'bg-amber-100 text-amber-900'}`}>{label}</span>;
 }
 
-export function EmptyState({ title, body, action }: { title: string; body: string; action?: ReactNode }) {
-  return <div className="surface px-6 py-14 text-center"><div className="mx-auto mb-5 grid size-12 place-items-center rounded-2xl border border-forest-900/10 bg-forest-50 text-xl text-forest-800 shadow-sm">＋</div><h2 className="text-lg font-black tracking-tight text-forest-950">{title}</h2><p className="mx-auto mt-2 max-w-md text-sm leading-7 text-slate-600">{body}</p>{action && <div className="mt-6">{action}</div>}</div>;
+export function EmptyState({ title, body, action, href, linkLabel }: { title: string; body: string; action?: ReactNode; href?: string; linkLabel?: string }) {
+  const content = <><div className={`mx-auto mb-5 grid size-12 place-items-center rounded-2xl border border-forest-900/10 bg-forest-50 text-xl text-forest-800 shadow-sm ${href ? 'transition group-hover:scale-105 group-hover:bg-forest-100' : ''}`}>＋</div><h2 className="text-lg font-black tracking-tight text-forest-950">{title}</h2><p className="mx-auto mt-2 max-w-md text-sm leading-7 text-slate-600">{body}</p>{linkLabel && <span className="mt-5 inline-flex text-sm font-black text-forest-700">{linkLabel} →</span>}</>;
+  if (href) return <Link to={href} className="surface group block px-6 py-14 text-center transition hover:-translate-y-0.5 hover:border-forest-700">{content}</Link>;
+  return <div className="surface px-6 py-14 text-center">{content}{action && <div className="mt-6">{action}</div>}</div>;
 }
 
 export function Loading() { return <div className="surface animate-pulse p-8 text-sm text-slate-500">情報を読み込んでいます…</div>; }

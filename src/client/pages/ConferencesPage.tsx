@@ -11,7 +11,7 @@ export function ConferencesPage() {
   const path = `/api/conferences${queryString(filters)}`;
   const { data, loading, error, reload } = useApi<Conference[]>(path);
   return <>
-    <PageHeader title="学会" description="学会を検索・管理します。" action={<Link to="/conferences/new" className="btn-primary">＋ 学会を追加</Link>} />
+    <PageHeader title="学会" description="学会を探し、編集や締切追加へ直接進めます。" action={<Link to="/conferences/new" className="btn-primary">＋ 学会を追加</Link>} />
     <div className="surface mb-5 grid gap-3 p-4 sm:grid-cols-2 lg:grid-cols-4">
       <label><span className="label">キーワード</span><input className="field" placeholder="名称・略称・分野" value={filters.q} onChange={(e) => setFilters({ ...filters, q: e.target.value })} /></label>
       <label><span className="label">学会種別</span><select className="field" value={filters.conference_type} onChange={(e) => setFilters({ ...filters, conference_type: e.target.value })}><option value="">すべて</option>{CONFERENCE_TYPES.map((v) => <option key={v}>{v}</option>)}</select></label>
@@ -22,7 +22,7 @@ export function ConferencesPage() {
       <div className="flex items-start justify-between gap-4"><div><Link to={`/conferences/${item.id}`} className="text-xl font-black text-forest-950 hover:underline">{item.acronym}</Link><p className="mt-1 text-sm leading-5 text-slate-600">{item.name}</p></div><span className="chip bg-forest-50 text-forest-800">{item.conference_type}</span></div>
       <div className="mt-4 flex flex-wrap gap-2">{item.fields.map((field) => <span key={field} className="chip bg-slate-100 text-slate-600">{field}</span>)}</div>
       <dl className="mt-5 grid grid-cols-2 gap-4 border-t border-slate-100 pt-4 text-sm"><div><dt className="text-xs font-bold text-slate-400">開催頻度</dt><dd className="mt-1 font-semibold">{item.frequency}</dd></div><div><dt className="text-xs font-bold text-slate-400">最新開催年</dt><dd className="mt-1 font-semibold">{item.latest_year ?? '未登録'}</dd></div><div className="col-span-2"><dt className="text-xs font-bold text-slate-400">次回締切</dt><dd className="mt-1 font-semibold text-forest-900">{formatDate(item.next_deadline, true)}</dd></div></dl>
-      <div className="mt-4 flex items-center justify-between"><a href={item.official_url} target="_blank" rel="noopener noreferrer" className="text-sm font-bold text-forest-700 hover:underline">公式サイト ↗</a><Link to={`/conferences/${item.id}`} className="text-sm font-black text-forest-900">詳細を見る →</Link></div>
+      <div className="mt-4 flex flex-col gap-3 border-t border-slate-100 pt-4 sm:flex-row sm:items-center sm:justify-between"><a href={item.official_url} target="_blank" rel="noopener noreferrer" className="text-sm font-bold text-forest-700 hover:underline">公式サイト ↗</a><div className="flex flex-wrap gap-2"><Link to={`/conferences/${item.id}/edit`} className="btn-secondary min-h-9 px-3 py-1 text-xs">学会情報を編集</Link>{item.next_edition_id ? <Link to={`/editions/${item.next_edition_id}?add=deadline#deadline-form`} className="btn-primary min-h-9 px-3 py-1 text-xs">＋ 締切を追加</Link> : <Link to={`/conferences/${item.id}/editions/new`} className="btn-primary min-h-9 px-3 py-1 text-xs">＋ 開催回を追加</Link>}<Link to={`/conferences/${item.id}`} className="inline-flex min-h-9 items-center px-2 text-xs font-black text-forest-900">開催回を見る →</Link></div></div>
     </article>)}</div>}
   </>;
 }

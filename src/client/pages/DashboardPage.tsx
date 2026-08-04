@@ -43,7 +43,7 @@ export function DashboardPage() {
         {data.deadlines.length ? <div className="surface divide-y divide-slate-100 overflow-hidden">{data.deadlines.slice(0, 10).map((item) => <Link key={String((item as unknown as { deadline_id: number }).deadline_id)} to={`/editions/${item.id}`} className="grid gap-3 p-4 transition hover:bg-forest-50 sm:grid-cols-[1fr_auto] sm:items-center">
           <div><div className="flex flex-wrap items-center gap-2"><span className="text-base font-black text-forest-950">{item.acronym}</span><span className="text-sm text-slate-500">{item.year}</span><StatusBadge value={String((item as unknown as { deadline_status: string }).deadline_status)} /></div><p className="mt-1 text-sm font-semibold text-slate-700">{item.next_deadline_type} · {formatDate(item.next_deadline, true)}{Boolean((item as unknown as { is_aoe: number }).is_aoe) && ' (AoE)'}</p></div>
           <DeadlineBadge date={item.next_deadline!} aoe={Boolean((item as unknown as { is_aoe: number }).is_aoe)} hasTime={Boolean((item as unknown as { has_time: number }).has_time)} />
-        </Link>)}</div> : <EmptyState title="90日以内の締切はありません" body="新しい開催回と締切を登録すると、ここに締切順で表示されます。" />}
+        </Link>)}</div> : <EmptyState title="90日以内の締切はありません" body={nextEdition ? `${nextEdition.acronym} ${nextEdition.year}に新しい締切を登録できます。` : 'まず学会と開催回を登録してください。'} href={nextEdition ? `/editions/${nextEdition.id}?add=deadline#deadline-form` : '/conferences/new'} linkLabel={nextEdition ? '締切を追加' : '学会を登録'} />}
       </section>
 
       <div className="space-y-6">

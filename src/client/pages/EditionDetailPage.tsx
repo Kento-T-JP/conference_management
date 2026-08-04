@@ -1,4 +1,4 @@
-import { type FormEvent, useState } from 'react';
+import { type FormEvent, useEffect, useState } from 'react';
 import { Link, useNavigate, useParams } from 'react-router-dom';
 import type { ConferenceDeadline, ConferenceEdition } from '../../shared/types';
 import { DEADLINE_TYPES, INFORMATION_STATUSES } from '../../shared/constants';
@@ -48,13 +48,20 @@ function commonDrafts(): DeadlineDraft[] {
 export function EditionDetailPage() {
   const { id } = useParams();
   const navigate = useNavigate();
-  const setup = new URLSearchParams(window.location.search).get('setup') === '1';
+  const searchParams = new URLSearchParams(window.location.search);
+  const setup = searchParams.get('setup') === '1';
+  const addDeadline = searchParams.get('add') === 'deadline';
+  const manageDeadlines = window.location.hash === '#deadlines';
   const { data, loading, error, reload } = useApi<ConferenceEdition>(`/api/editions/${id}`);
-  const [drafts, setDrafts] = useState<DeadlineDraft[]>(setup ? commonDrafts() : [newDraft()]);
+  const [drafts, setDrafts] = useState<DeadlineDraft[]>(setup || addDeadline ? commonDrafts() : [newDraft()]);
   const [editingId, setEditingId] = useState<number | null>(null);
-  const [showForm, setShowForm] = useState(setup);
+  const [showForm, setShowForm] = useState(setup || addDeadline);
   const [saving, setSaving] = useState(false);
   const [message, setMessage] = useState('');
+
+  useEffect(() => {
+    if (!loading && (addDeadline || manageDeadlines)) requestAnimationFrame(() => document.getElementById(addDeadline ? 'deadline-form' : 'deadlines')?.scrollIntoView({ behavior: 'smooth', block: 'start' }));
+  }, [addDeadline, loading, manageDeadlines]);
 
   if (loading) return <Loading />;
   if (error || !data) return <ErrorState message={error ?? '開催回が見つかりません。'} retry={reload} />;
@@ -98,6 +105,7 @@ export function EditionDetailPage() {
     setEditingId(null);
     setDrafts(commonDrafts());
     setShowForm(true);
+    scrollToDeadlineForm();
   }
 
   function edit(deadline: ConferenceDeadline) {
@@ -114,6 +122,7 @@ export function EditionDetailPage() {
     }]);
     setEditingId(deadline.id);
     setShowForm(true);
+    scrollToDeadlineForm();
   }
 
   async function remove(deadlineId: number) {
@@ -148,10 +157,10 @@ export function EditionDetailPage() {
     {message && <div className="mb-5 rounded-xl border border-amber-200 bg-amber-50 p-4 text-sm text-amber-900">{message}</div>}
     <div className="grid gap-6 lg:grid-cols-[1fr_2fr]">
       <aside className="surface h-fit p-5"><div className="flex items-center justify-between"><h2 className="font-black">開催情報</h2><StatusBadge value={data.information_status} /></div><dl className="mt-5 space-y-4 text-sm"><Info label="開催期間" value={`${formatDate(data.start_date)}${data.end_date ? ` 〜 ${formatDate(data.end_date)}` : ''}`} /><Info label="開催地" value={[data.city, data.country].filter(Boolean).join(', ') || '未定'} /><Info label="開催形式" value={data.attendance_format} /><Info label="タイムゾーン" value={data.timezone || '未設定'} /><Info label="備考" value={data.notes || 'なし'} /></dl>{officialUrl && <a className="btn-secondary mt-5 w-full" href={officialUrl} target="_blank" rel="noopener noreferrer">公式ページを開く ↗</a>}<button onClick={archive} className="mt-3 w-full text-sm font-bold text-slate-500 hover:text-red-700">アーカイブ</button></aside>
-      <section><h2 className="mb-3 text-xl font-black text-forest-950">締切一覧</h2>{!data.deadlines?.length ? <EmptyState title="締切が未登録です" body="論文投稿、採否通知、最終稿などの日程を一度にまとめて登録できます。" action={<button className="btn-primary" onClick={startCreate}>締切をまとめて追加</button>} /> : <div className="surface divide-y divide-slate-100 overflow-hidden">{data.deadlines.map((deadline) => <div key={deadline.id} className="grid gap-3 p-5 sm:grid-cols-[1fr_auto] sm:items-center"><div><div className="flex flex-wrap items-center gap-2"><h3 className="font-black">{deadline.title || deadlineLabels[deadline.deadline_type] || deadline.deadline_type}</h3><StatusBadge value={deadline.information_status} />{deadline.is_extended ? <span className="chip bg-blue-100 text-blue-800">延長</span> : null}</div><p className="mt-2 text-sm font-semibold">{formatDate(deadline.deadline_at, Boolean(deadline.has_time))}{deadline.is_aoe ? ' (AoE)' : deadline.timezone ? ` (${deadline.timezone})` : ''}</p>{deadline.previous_deadline_at && <p className="mt-1 text-xs text-slate-500">旧締切: {formatDate(deadline.previous_deadline_at, true)}</p>}</div><div className="flex items-center gap-3"><DeadlineBadge date={deadline.deadline_at} aoe={Boolean(deadline.is_aoe)} hasTime={Boolean(deadline.has_time)} /><button className="text-sm font-bold text-forest-700" onClick={() => edit(deadline)}>編集</button><button className="text-sm font-bold text-slate-400 hover:text-red-700" onClick={() => remove(deadline.id)}>削除</button></div></div>)}</div>}</section>
+      <section id="deadlines"><h2 className="mb-3 text-xl font-black text-forest-950">締切一覧</h2>{!data.deadlines?.length ? <EmptyState title="締切が未登録です" body="論文投稿、採否通知、最終稿などの日程を一度にまとめて登録できます。" action={<button className="btn-primary" onClick={startCreate}>締切をまとめて追加</button>} /> : <div className="surface divide-y divide-slate-100 overflow-hidden">{data.deadlines.map((deadline) => <div key={deadline.id} className="grid gap-3 p-5 sm:grid-cols-[1fr_auto] sm:items-center"><div><div className="flex flex-wrap items-center gap-2"><h3 className="font-black">{deadline.title || deadlineLabels[deadline.deadline_type] || deadline.deadline_type}</h3><StatusBadge value={deadline.information_status} />{deadline.is_extended ? <span className="chip bg-blue-100 text-blue-800">延長</span> : null}</div><p className="mt-2 text-sm font-semibold">{formatDate(deadline.deadline_at, Boolean(deadline.has_time))}{deadline.is_aoe ? ' (AoE)' : deadline.timezone ? ` (${deadline.timezone})` : ''}</p>{deadline.previous_deadline_at && <p className="mt-1 text-xs text-slate-500">旧締切: {formatDate(deadline.previous_deadline_at, true)}</p>}</div><div className="flex items-center gap-3"><DeadlineBadge date={deadline.deadline_at} aoe={Boolean(deadline.is_aoe)} hasTime={Boolean(deadline.has_time)} /><button className="text-sm font-bold text-forest-700" onClick={() => edit(deadline)}>編集</button><button className="text-sm font-bold text-slate-400 hover:text-red-700" onClick={() => remove(deadline.id)}>削除</button></div></div>)}</div>}</section>
     </div>
 
-    {showForm && <form onSubmit={submitDeadlines} className="surface mt-7 p-5 sm:p-7">
+    {showForm && <form id="deadline-form" onSubmit={submitDeadlines} className="surface mt-7 scroll-mt-24 p-5 sm:p-7">
       <div className="flex flex-col justify-between gap-4 border-b border-slate-200/80 pb-5 sm:flex-row sm:items-start"><div><p className="section-kicker">Deadlines</p><h2 className="mt-1 text-xl font-black text-forest-950">{editingId ? '締切を編集' : '締切をまとめて登録'}</h2><p className="mt-2 text-sm leading-6 text-slate-500">日付だけでも登録できます。時刻やタイムゾーンが発表されている場合だけ追加してください。</p></div><button type="button" className="shrink-0 text-sm font-bold text-slate-500" onClick={closeForm}>閉じる</button></div>
       {!editingId && <div className="my-5 flex flex-wrap items-center gap-2"><button type="button" className="btn-secondary min-h-9 px-4 py-1 text-xs" onClick={() => setDrafts((current) => [...current, newDraft()])}>＋ 行を追加</button><button type="button" className="rounded-full px-4 py-2 text-xs font-black text-forest-700 hover:bg-forest-50" onClick={addCommonMissing}>主要3件をセット</button><span className="text-xs text-slate-400">最大20件まで一括登録できます</span></div>}
       <datalist id="timezone-options"><option value="Asia/Tokyo" /><option value="UTC" /><option value="America/New_York" /><option value="America/Los_Angeles" /><option value="Europe/London" /></datalist>
@@ -188,6 +197,8 @@ function toPayload(draft: DeadlineDraft) {
     version: draft.version
   };
 }
+
+function scrollToDeadlineForm() { requestAnimationFrame(() => document.getElementById('deadline-form')?.scrollIntoView({ behavior: 'smooth', block: 'start' })); }
 
 function Info({ label, value }: { label: string; value: string }) { return <div><dt className="text-xs font-bold text-slate-400">{label}</dt><dd className="mt-1 leading-6">{value}</dd></div>; }
 function Required() { return <span className="text-xs text-red-700">必須</span>; }
