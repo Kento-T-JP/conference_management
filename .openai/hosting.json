@@ -1,13 +1,5 @@
 {
-  "version": 1,
   "project_id": "appgprj_6a72236250388191afa7ba9526a3ed3d",
-  "site": {
-    "framework": "vite",
-    "buildCommand": "npm run build",
-    "outputDirectory": "dist/client"
-  },
-  "bindings": {
-    "d1": "DB",
-    "r2": null
-  }
+  "d1": "DB",
+  "r2": null
 }
