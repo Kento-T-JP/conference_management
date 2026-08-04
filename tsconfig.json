@@ -11,6 +11,10 @@
     "forceConsistentCasingInFileNames": true,
     "module": "ESNext",
     "moduleResolution": "Bundler",
+    "baseUrl": ".",
+    "paths": {
+      "react-router-dom": ["./src/client/lib/router.tsx"]
+    },
     "resolveJsonModule": true,
     "isolatedModules": true,
     "noEmit": true,

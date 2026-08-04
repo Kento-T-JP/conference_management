@@ -18,7 +18,7 @@
 
 ## 使用技術
 
-- React 19 / TypeScript / React Router / Vite
+- React 19 / TypeScript / Vite（依存を抑えた小型クライアントルーター）
 - Tailwind CSS / FullCalendar
 - Cloudflare Workers / Hono
 - Cloudflare D1 / Cron Triggers

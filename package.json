@@ -19,22 +19,21 @@
     "db:seed:local": "wrangler d1 execute conference-management-local --local --file=./seeds/seed.sql"
   },
   "dependencies": {
-    "@cloudflare/vite-plugin": "^1.15.2",
     "@fullcalendar/core": "^6.1.19",
     "@fullcalendar/daygrid": "^6.1.19",
     "@fullcalendar/interaction": "^6.1.19",
     "@fullcalendar/react": "^6.1.19",
-    "@tailwindcss/vite": "^4.1.14",
     "date-fns": "^4.1.0",
     "hono": "^4.9.8",
     "react": "^19.1.1",
     "react-dom": "^19.1.1",
-    "react-router-dom": "^7.9.1",
     "tailwindcss": "^4.1.14",
     "zod": "^4.1.11"
   },
   "devDependencies": {
+    "@cloudflare/vite-plugin": "^1.15.2",
     "@cloudflare/workers-types": "^5.20260730.1",
+    "@tailwindcss/vite": "^4.1.14",
     "@eslint/js": "^9.36.0",
     "@types/node": "^22.18.6",
     "@types/react": "^19.1.16",
@@ -48,5 +47,8 @@
     "vite": "^7.1.7",
     "vitest": "^3.2.4",
     "wrangler": "^4.38.0"
+  },
+  "overrides": {
+    "undici": "7.29.0"
   }
 }
