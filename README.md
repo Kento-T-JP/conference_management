@@ -163,7 +163,7 @@ JSONには`schema_version`、出力日時、学会、開催回、締切、シス
 
 ## API概要
 
-- `/api/conferences`: 学会CRUD、アーカイブ、復元
+- `/api/conferences`: 学会CRUD、完全消去、アーカイブ、復元
 - `/api/conferences/:id/editions`: 開催回作成
 - `/api/editions`: 開催回一覧、更新、アーカイブ、復元、次年度複製
 - `/api/editions/:id/deadlines`: 締切作成

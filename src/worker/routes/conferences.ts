@@ -73,6 +73,24 @@ conferenceRoutes.put('/:id', async (c) => {
   } catch (error) { return errorResponse(c, error); }
 });
 
+conferenceRoutes.delete('/:id', async (c) => {
+  try {
+    const id = parseId(c.req.param('id'));
+    const current = await c.env.DB.prepare(`SELECT c.id,
+      (SELECT COUNT(*) FROM conference_editions e WHERE e.conference_id=c.id) edition_count,
+      (SELECT COUNT(*) FROM conference_deadlines d JOIN conference_editions e ON e.id=d.conference_edition_id WHERE e.conference_id=c.id) deadline_count
+      FROM conferences c WHERE c.id=?`).bind(id).first<{ id: number; edition_count: number; deadline_count: number }>();
+    if (!current) throw new ApiError(404, 'NOT_FOUND', '学会が見つかりません。');
+    await c.env.DB.batch([
+      c.env.DB.prepare(`DELETE FROM notification_logs WHERE conference_edition_id IN (SELECT id FROM conference_editions WHERE conference_id=?) OR deadline_id IN (SELECT d.id FROM conference_deadlines d JOIN conference_editions e ON e.id=d.conference_edition_id WHERE e.conference_id=?)`).bind(id, id),
+      c.env.DB.prepare('DELETE FROM conference_deadlines WHERE conference_edition_id IN (SELECT id FROM conference_editions WHERE conference_id=?)').bind(id),
+      c.env.DB.prepare('DELETE FROM conference_editions WHERE conference_id=?').bind(id),
+      c.env.DB.prepare('DELETE FROM conferences WHERE id=?').bind(id)
+    ]);
+    return c.json({ data: { id, deleted_editions: current.edition_count, deleted_deadlines: current.deadline_count } });
+  } catch (error) { return errorResponse(c, error); }
+});
+
 for (const action of ['archive', 'restore'] as const) {
   conferenceRoutes.post(`/:id/${action}`, async (c) => {
     try {
