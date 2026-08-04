@@ -118,6 +118,13 @@ a { color: inherit; }
 .calendar-filter--conference .calendar-filter-dot { background: #52606d; }
 .bento-card { @apply relative overflow-hidden rounded-[1.55rem] border border-white/80 p-5 shadow-[0_18px_45px_-34px_rgba(16,39,31,.45)] sm:p-6; }
 .bento-card::after { position: absolute; top: 0; right: 0; width: 5rem; height: 5rem; border-radius: 0 0 0 5rem; background: rgba(255,255,255,.3); content: ""; }
+.deadline-empty-choice { @apply flex min-h-28 w-full items-center gap-3 rounded-[1.35rem] border border-slate-200 bg-[#fbfaf7]/80 p-4 text-forest-950 transition hover:-translate-y-0.5 hover:border-forest-700/35 hover:bg-white; }
+.deadline-empty-choice.is-active { @apply border-forest-700/35 bg-forest-50; }
+.deadline-empty-choice > span { @apply grid size-9 shrink-0 place-items-center rounded-full bg-forest-950 text-[.68rem] font-black text-white; }
+.deadline-empty-choice > div { @apply min-w-0 flex-1; }
+.deadline-empty-choice strong { @apply block text-sm font-black; }
+.deadline-empty-choice small { @apply mt-1 block text-xs leading-5 text-slate-500; }
+.deadline-empty-choice > b { @apply text-lg text-[#e36f50]; }
 
 ::selection { background: #dbe8df; color: #10271f; }
 

@@ -1,7 +1,9 @@
+import { useState } from 'react';
 import { Link } from 'react-router-dom';
-import type { DashboardData } from '../../shared/types';
+import type { Conference, ConferenceEdition, DashboardData } from '../../shared/types';
 import { useApi } from '../hooks/useApi';
-import { DeadlineBadge, EmptyState, ErrorState, formatDate, Loading, StatusBadge } from '../components/ui';
+import { api } from '../lib/api';
+import { DeadlineBadge, ErrorState, formatDate, Loading, StatusBadge } from '../components/ui';
 
 export function DashboardPage() {
   const { data, loading, error, reload } = useApi<DashboardData>('/api/dashboard/opportunities');
@@ -43,7 +45,7 @@ export function DashboardPage() {
         {data.deadlines.length ? <div className="surface divide-y divide-slate-100 overflow-hidden">{data.deadlines.slice(0, 10).map((item) => <Link key={String((item as unknown as { deadline_id: number }).deadline_id)} to={`/editions/${item.id}`} className="grid gap-3 p-4 transition hover:bg-forest-50 sm:grid-cols-[1fr_auto] sm:items-center">
           <div><div className="flex flex-wrap items-center gap-2"><span className="text-base font-black text-forest-950">{item.acronym}</span><span className="text-sm text-slate-500">{item.year}</span><StatusBadge value={String((item as unknown as { deadline_status: string }).deadline_status)} /></div><p className="mt-1 text-sm font-semibold text-slate-700">{item.next_deadline_type} · {formatDate(item.next_deadline, true)}{Boolean((item as unknown as { is_aoe: number }).is_aoe) && ' (AoE)'}</p></div>
           <DeadlineBadge date={item.next_deadline!} aoe={Boolean((item as unknown as { is_aoe: number }).is_aoe)} hasTime={Boolean((item as unknown as { has_time: number }).has_time)} />
-        </Link>)}</div> : <EmptyState title="90日以内の締切はありません" body={nextEdition ? `${nextEdition.acronym} ${nextEdition.year}に新しい締切を登録できます。` : 'まず学会と開催回を登録してください。'} href={nextEdition ? `/editions/${nextEdition.id}?add=deadline#deadline-form` : '/conferences/new'} linkLabel={nextEdition ? '締切を追加' : '学会を登録'} />}
+        </Link>)}</div> : <DeadlineEmptyState />}
       </section>
 
       <div className="space-y-6">
@@ -68,3 +70,65 @@ function SummaryCard({ label, value, tone }: { label: string; value: number; ton
 }
 
 function SectionTitle({ title, link }: { title: string; link?: string }) { return <div className="mb-4 flex items-center justify-between"><div className="flex items-center gap-3"><span className="h-px w-6 bg-[#e36f50]" /><h2 className="text-lg font-black tracking-[-.025em] text-forest-950">{title}</h2></div>{link && <Link to={link} className="rounded-full bg-white/60 px-3 py-1.5 text-xs font-black text-forest-700 transition hover:bg-white">すべて見る →</Link>}</div>; }
+
+function DeadlineEmptyState() {
+  const [showExisting, setShowExisting] = useState(false);
+  const [conferences, setConferences] = useState<Conference[] | null>(null);
+  const [editions, setEditions] = useState<ConferenceEdition[]>([]);
+  const [conferenceId, setConferenceId] = useState('');
+  const [editionId, setEditionId] = useState('');
+  const [loading, setLoading] = useState(false);
+  const [message, setMessage] = useState('');
+
+  async function chooseExisting() {
+    setShowExisting(true);
+    if (conferences) return;
+    setLoading(true);
+    setMessage('');
+    try {
+      const response = await api<{ data: Conference[] }>('/api/conferences');
+      setConferences(response.data);
+    } catch (error) {
+      setMessage(error instanceof Error ? error.message : '学会一覧を読み込めませんでした。');
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  async function selectConference(value: string) {
+    setConferenceId(value);
+    setEditionId('');
+    setEditions([]);
+    setMessage('');
+    if (!value) return;
+    setLoading(true);
+    try {
+      const response = await api<{ data: Conference & { editions: ConferenceEdition[] } }>(`/api/conferences/${value}`);
+      setEditions(response.data.editions.filter((edition) => !edition.is_archived));
+    } catch (error) {
+      setMessage(error instanceof Error ? error.message : '開催回を読み込めませんでした。');
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  const destination = !conferenceId || !editionId ? '' : editionId === 'new' ? `/conferences/${conferenceId}/editions/new` : `/editions/${editionId}?add=deadline#deadline-form`;
+
+  return <div className="surface overflow-hidden p-5 sm:p-7">
+    <div className="text-center"><p className="section-kicker">Add a deadline</p><h3 className="mt-2 text-xl font-black text-forest-950">90日以内の締切はありません</h3><p className="mt-2 text-sm leading-6 text-slate-500">追加方法を選んでください。</p></div>
+    <div className="mt-6 grid gap-3 sm:grid-cols-2">
+      <Link to="/conferences/new" className="deadline-empty-choice"><span>01</span><div><strong>新しい学会を登録</strong><small>学会情報、開催回、締切を順番に登録します</small></div><b>→</b></Link>
+      <button type="button" className={`deadline-empty-choice text-left ${showExisting ? 'is-active' : ''}`} onClick={chooseExisting} aria-expanded={showExisting}><span>02</span><div><strong>既存の学会に追加</strong><small>登録済みの学会と開催回を選びます</small></div><b>{showExisting ? '↓' : '→'}</b></button>
+    </div>
+    {showExisting && <div className="mt-5 rounded-[1.35rem] border border-forest-700/15 bg-forest-50/70 p-4 sm:p-5">
+      <div className="grid gap-4 sm:grid-cols-2">
+        <label><span className="label">1. 学会を選択</span><select className="field" value={conferenceId} onChange={(event) => void selectConference(event.target.value)} disabled={loading && !conferences}><option value="">学会を選んでください</option>{conferences?.map((conference) => <option key={conference.id} value={conference.id}>{conference.acronym} — {conference.name}</option>)}</select></label>
+        <label><span className="label">2. 開催回を選択</span><select className="field" value={editionId} onChange={(event) => setEditionId(event.target.value)} disabled={!conferenceId || loading}><option value="">開催回を選んでください</option>{editions.map((edition) => <option key={edition.id} value={edition.id}>{edition.year}年{edition.city ? ` — ${edition.city}` : ''}</option>)}<option value="new">＋ 新しい開催回と締切を登録</option></select></label>
+      </div>
+      {loading && <p className="mt-3 text-xs font-bold text-slate-500">読み込んでいます…</p>}
+      {message && <p className="mt-3 text-sm font-semibold text-red-700">{message}</p>}
+      {conferences && !conferences.length && <p className="mt-3 text-sm text-slate-500">登録済みの学会がありません。「新しい学会を登録」を選んでください。</p>}
+      <div className="mt-5 flex justify-end">{destination ? <Link className="btn-primary" to={destination}>{editionId === 'new' ? '開催回と締切を登録' : 'この開催回に締切を追加'} →</Link> : <button type="button" className="btn-primary" disabled>追加先を選択してください</button>}</div>
+    </div>}
+  </div>;
+}
