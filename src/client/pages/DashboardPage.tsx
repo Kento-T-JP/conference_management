@@ -18,7 +18,7 @@ export function DashboardPage() {
     <section className="dashboard-hero mb-5 flex flex-col justify-between gap-8 sm:flex-row sm:items-end">
       <div className="relative z-10 max-w-2xl"><p className="mb-5 text-[.68rem] font-black uppercase tracking-[.25em] text-white/55">Shinomiya Laboratory</p><h1 className="text-4xl font-black leading-[1.04] tracking-[-.055em] sm:text-6xl">次の締切を、<br />ひと目で。</h1><p className="mt-5 max-w-lg text-sm font-medium leading-7 text-white/70 sm:text-base">篠宮研究室の学会情報から、直近の締切と確認が必要な項目をまとめています。</p><Link to="/conferences/new" className="btn-primary mt-7">＋ 新規登録をはじめる</Link></div>
       <div className="hero-focus-card">
-        <p className="text-[.62rem] font-black uppercase tracking-[.2em] text-white/55">次の予定</p>
+        <p className="text-xs font-black uppercase tracking-[.16em] text-white/65">次の予定</p>
         {nextDeadline ? <Link to={`/editions/${nextDeadline.id}`} className="mt-4 block rounded-2xl outline-none transition hover:bg-white/5 focus-visible:bg-white/5">
           <div className="flex flex-wrap items-baseline gap-2"><strong className="text-2xl font-black tracking-[-.04em]">{nextDeadline.acronym}</strong><span className="text-sm font-bold text-white/60">{nextDeadline.year}</span></div>
           <p className="mt-2 text-sm font-bold text-white/80">{nextDeadline.next_deadline_type}</p>
@@ -64,7 +64,7 @@ export function DashboardPage() {
 
 function SummaryCard({ label, value, tone }: { label: string; value: number; tone: 'urgent' | 'soon' | 'normal' }) {
   const styles = { urgent: 'bg-[#fae9e3] text-[#9e3f2d]', soon: 'bg-[#f5ead5] text-[#7e5a24]', normal: 'bg-[#dfece5] text-forest-900' };
-  return <div className={`bento-card ${styles[tone]}`}><p className="text-[.68rem] font-black uppercase tracking-[.16em] opacity-65">{label}の締切</p><p className="mt-4 text-5xl font-black tracking-[-.06em] tabular-nums">{value}<span className="ml-2 text-xs tracking-normal opacity-60">件</span></p></div>;
+  return <div className={`bento-card ${styles[tone]}`}><p className="text-[.78rem] font-black tracking-[.1em] opacity-70">{label}の締切</p><p className="mt-4 text-5xl font-black tracking-[-.06em] tabular-nums">{value}<span className="ml-2 text-xs tracking-normal opacity-60">件</span></p></div>;
 }
 
 function SectionTitle({ title, link }: { title: string; link?: string }) { return <div className="mb-4 flex items-center justify-between"><div className="flex items-center gap-3"><span className="h-px w-6 bg-[#e36f50]" /><h2 className="text-lg font-black tracking-[-.025em] text-forest-950">{title}</h2></div>{link && <Link to={link} className="rounded-full bg-white/60 px-3 py-1.5 text-xs font-black text-forest-700 transition hover:bg-white">すべて見る →</Link>}</div>; }
