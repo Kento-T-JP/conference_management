@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import type { ConferenceEdition } from '../../shared/types';
-import { ATTENDANCE_FORMATS, INFORMATION_STATUSES } from '../../shared/constants';
+import { ATTENDANCE_FORMATS } from '../../shared/constants';
 import { useApi } from '../hooks/useApi';
 import { queryString } from '../lib/api';
 import { DeadlineBadge, EmptyState, ErrorState, formatDate, Loading, PageHeader, StatusBadge } from '../components/ui';
@@ -13,7 +13,7 @@ export function EditionsPage() {
     <div className="surface mb-5 grid gap-3 p-4 sm:grid-cols-2 lg:grid-cols-5">
       <label><span className="label">開催年</span><input className="field" inputMode="numeric" placeholder="例: 2027" value={filters.year} onChange={(e) => setFilters({ ...filters, year: e.target.value })} /></label>
       <label><span className="label">開催形式</span><select className="field" value={filters.attendance_format} onChange={(e) => setFilters({ ...filters, attendance_format: e.target.value })}><option value="">すべて</option>{ATTENDANCE_FORMATS.map((v) => <option key={v}>{v}</option>)}</select></label>
-      <label><span className="label">情報状態</span><select className="field" value={filters.information_status} onChange={(e) => setFilters({ ...filters, information_status: e.target.value })}><option value="">すべて</option>{INFORMATION_STATUSES.map((v) => <option key={v}>{v}</option>)}</select></label>
+      <label className="flex items-end gap-2 pb-2 text-sm font-semibold"><input type="checkbox" className="size-4 accent-[#2c6652]" checked={filters.information_status === '公式'} onChange={(e) => setFilters({ ...filters, information_status: e.target.checked ? '公式' : '' })} /> 公式サイトで確認済みのみ</label>
       <label><span className="label">並べ替え</span><select className="field" value={filters.sort} onChange={(e) => setFilters({ ...filters, sort: e.target.value })}><option value="deadline">締切が近い順</option><option value="start_date">開催日が近い順</option></select></label>
       <label className="flex items-end gap-2 pb-2 text-sm font-semibold"><input type="checkbox" className="size-4" checked={filters.include_past} onChange={(e) => setFilters({ ...filters, include_past: e.target.checked })} /> 締切済みも表示</label>
     </div>

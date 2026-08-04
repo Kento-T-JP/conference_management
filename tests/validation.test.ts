@@ -7,6 +7,11 @@ describe('入力バリデーション', () => {
     expect(conferenceSchema.safeParse({ name: '<script>alert(1)</script>', acronym: 'EC', official_url: 'invalid', conference_type: '国際会議', frequency: '毎年' }).success).toBe(false);
   });
   it('開催終了日が開始日より前なら拒否する', () => expect(editionSchema.safeParse({ year: 2027, start_date: '2027-10-10', end_date: '2027-10-09' }).success).toBe(false));
+  it('情報状態は公式または未確認だけを受け付ける', () => {
+    expect(editionSchema.safeParse({ year: 2027, information_status: '公式' }).success).toBe(true);
+    expect(editionSchema.safeParse({ year: 2027, information_status: '仮' }).success).toBe(false);
+    expect(deadlineSchema.safeParse({ deadline_type: 'Full Paper', deadline_at: '2027-01-01', information_status: '予測' }).success).toBe(false);
+  });
   it('不正なenum値を拒否する', () => expect(deadlineSchema.safeParse({ deadline_type: 'Unknown', deadline_at: '2027-01-01' }).success).toBe(false));
   it('AoE締切を受け付ける', () => expect(deadlineSchema.safeParse({ deadline_type: 'Full Paper', deadline_at: '2027-01-01', is_aoe: true, timezone: 'AoE' }).success).toBe(true));
   it('複数の締切をまとめて受け付ける', () => expect(deadlineBatchSchema.safeParse({ deadlines: [

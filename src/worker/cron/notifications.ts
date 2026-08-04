@@ -29,7 +29,7 @@ export async function runWeeklySummary(env: Env, now = new Date()): Promise<void
   const [deadlines, recent, unconfirmed] = await env.DB.batch([
     env.DB.prepare(`SELECT d.deadline_at, d.deadline_type, d.is_aoe, e.id edition_id, e.year, c.acronym FROM conference_deadlines d JOIN conference_editions e ON e.id=d.conference_edition_id JOIN conferences c ON c.id=e.conference_id WHERE d.notification_enabled=1 AND e.is_archived=0 AND c.is_archived=0 AND d.deadline_at >= datetime('now') AND d.deadline_at < datetime('now','+90 days') ORDER BY d.deadline_at LIMIT 20`),
     env.DB.prepare(`SELECT e.id, e.year, c.acronym FROM conference_editions e JOIN conferences c ON c.id=e.conference_id WHERE e.created_at >= datetime('now','-7 days') ORDER BY e.created_at DESC LIMIT 10`),
-    env.DB.prepare(`SELECT e.id, e.year, c.acronym FROM conference_editions e JOIN conferences c ON c.id=e.conference_id WHERE e.information_status IN ('予測','未確認') AND e.is_archived=0 AND c.frequency IN ('毎年','隔年') ORDER BY e.year LIMIT 10`)
+    env.DB.prepare(`SELECT e.id, e.year, c.acronym FROM conference_editions e JOIN conferences c ON c.id=e.conference_id WHERE e.information_status='未確認' AND e.is_archived=0 AND c.frequency IN ('毎年','隔年') ORDER BY e.year LIMIT 10`)
   ]);
   if (!deadlines.results.length && !recent.results.length && !unconfirmed.results.length) return;
   const deadlineLines = (deadlines.results as Record<string, unknown>[]).map((row) => `• ${row.acronym} ${row.year} ${row.deadline_type}: ${String(row.deadline_at).slice(0, 16)}${row.is_aoe ? ' AoE' : ''}`);

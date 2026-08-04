@@ -17,7 +17,7 @@ opportunityRoutes.get('/dashboard/opportunities', async (c) => {
       c.env.DB.prepare(`SELECT e.*, c.name conference_name, c.acronym, c.fields, c.conference_type FROM conference_editions e JOIN conferences c ON c.id=e.conference_id WHERE e.is_archived=0 AND c.is_archived=0 AND e.end_date >= date('now') ORDER BY e.start_date LIMIT 10`),
       c.env.DB.prepare(`SELECT c.* FROM conferences c WHERE c.is_archived=0 ORDER BY c.updated_at DESC LIMIT 8`),
       c.env.DB.prepare(`SELECT c.*, MAX(e.year) last_year FROM conferences c JOIN conference_editions e ON e.conference_id=c.id AND e.is_archived=0 WHERE c.is_archived=0 AND c.frequency IN ('毎年','隔年') GROUP BY c.id`),
-      c.env.DB.prepare(`SELECT e.*, c.name conference_name, c.acronym, c.fields, c.conference_type FROM conference_editions e JOIN conferences c ON c.id=e.conference_id WHERE e.is_archived=0 AND c.is_archived=0 AND e.information_status IN ('予測','未確認') ORDER BY e.year, c.acronym LIMIT 20`)
+      c.env.DB.prepare(`SELECT e.*, c.name conference_name, c.acronym, c.fields, c.conference_type FROM conference_editions e JOIN conferences c ON c.id=e.conference_id WHERE e.is_archived=0 AND c.is_archived=0 AND e.information_status='未確認' ORDER BY e.year, c.acronym LIMIT 20`)
     ]);
     const missing = (recurring.results as Record<string, unknown>[]).flatMap((row) => {
       const expected = Number(row.last_year) + (row.frequency === '隔年' ? 2 : 1);

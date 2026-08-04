@@ -1,12 +1,6 @@
-import { DEADLINE_TYPES, INFORMATION_STATUSES } from '../../shared/constants';
+import { DEADLINE_TYPES } from '../../shared/constants';
 import { createDeadlineDraft, deadlineLabel, deadlineName, type DeadlineDraft } from '../lib/deadlineDraft';
-
-const statusDescriptions: Record<string, string> = {
-  公式: '公式サイトで確認済み',
-  仮: '主催者による暫定情報',
-  予測: '過去情報などからの予測',
-  未確認: '情報源をまだ確認していない'
-};
+import { OfficialConfirmation } from './ui';
 
 export function DeadlinePicker({ drafts, onChange, selectable = true }: { drafts: DeadlineDraft[]; onChange: (drafts: DeadlineDraft[]) => void; selectable?: boolean }) {
   function toggle(type: string) {
@@ -24,12 +18,11 @@ export function DeadlinePicker({ drafts, onChange, selectable = true }: { drafts
         <label><span className="label">時刻 <Optional /></span><input className="field" type="time" value={draft.time} onChange={(event) => update(index, { time: event.target.value })} disabled={draft.is_aoe} /></label>
         {selectable && <label><span className="label">タイムゾーン <Optional /></span><input list="timezone-options" className="field" placeholder="例：Asia/Tokyo" value={draft.timezone} onChange={(event) => update(index, { timezone: event.target.value })} disabled={draft.is_aoe} /></label>}
       </div>
-      <div className="mt-4 grid gap-4 md:grid-cols-[1.25fr_1fr_1fr]">
+      <div className="mt-4 grid gap-4 md:grid-cols-[1.25fr_1fr]">
         <label><span className="label">表示名 <Optional /></span><input className="field" placeholder="区別が必要な場合のみ" value={draft.title} onChange={(event) => update(index, { title: event.target.value })} /></label>
         {!selectable && <label><span className="label">タイムゾーン <Optional /></span><input list="timezone-options" className="field" placeholder="例：Asia/Tokyo" value={draft.timezone} onChange={(event) => update(index, { timezone: event.target.value })} disabled={draft.is_aoe} /></label>}
-        <label><span className="label">情報状態</span><select className="field" value={draft.information_status} onChange={(event) => update(index, { information_status: event.target.value })}>{INFORMATION_STATUSES.map((status) => <option key={status}>{status}</option>)}</select><span className="field-hint">{statusDescriptions[draft.information_status]}</span></label>
       </div>
-      <div className="mt-4 flex flex-wrap gap-3"><label className="deadline-inline-option"><input type="checkbox" checked={draft.is_aoe} onChange={(event) => update(index, { is_aoe: event.target.checked, timezone: event.target.checked ? 'AoE' : '', time: event.target.checked ? '' : draft.time })} /><span><strong>AoE</strong><small>世界のどこかでその日が終わるまで</small></span></label><label className="deadline-inline-option"><input type="checkbox" checked={draft.notification_enabled} onChange={(event) => update(index, { notification_enabled: event.target.checked })} /><span><strong>Slack通知</strong><small>締切前に研究室へ通知</small></span></label></div>
+      <div className="mt-4 flex flex-wrap gap-3"><OfficialConfirmation checked={draft.information_status === '公式'} onChange={(checked) => update(index, { information_status: checked ? '公式' : '未確認' })} /><label className="deadline-inline-option"><input type="checkbox" checked={draft.is_aoe} onChange={(event) => update(index, { is_aoe: event.target.checked, timezone: event.target.checked ? 'AoE' : '', time: event.target.checked ? '' : draft.time })} /><span><strong>AoE</strong><small>世界のどこかでその日が終わるまで</small></span></label><label className="deadline-inline-option"><input type="checkbox" checked={draft.notification_enabled} onChange={(event) => update(index, { notification_enabled: event.target.checked })} /><span><strong>Slack通知</strong><small>締切前に研究室へ通知</small></span></label></div>
     </section>)}</div> : selectable && <div className="mt-5 rounded-2xl border border-dashed border-slate-300 p-6 text-center text-sm text-slate-500">締切を登録しない場合は、このまま保存できます。</div>}
     <datalist id="timezone-options"><option value="Asia/Tokyo" /><option value="UTC" /><option value="America/New_York" /><option value="America/Los_Angeles" /><option value="Europe/London" /></datalist>
   </div>;
