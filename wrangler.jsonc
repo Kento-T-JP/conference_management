@@ -15,7 +15,7 @@
     }
   ],
   "triggers": {
-    "crons": ["0 0 * * SUN", "0 0 * * *"]
+    "crons": ["0 0 * * MON", "0 0 * * *"]
   },
   "vars": {
     "APP_BASE_URL": "http://localhost:5173",
