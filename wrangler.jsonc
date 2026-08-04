@@ -33,7 +33,7 @@
         }
       ],
       "vars": {
-        "APP_BASE_URL": "https://conference-management.example.workers.dev",
+        "APP_BASE_URL": "https://conference-management.kento0901910.workers.dev",
         "ENVIRONMENT": "production"
       }
     }
