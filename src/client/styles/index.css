@@ -95,6 +95,11 @@ a { color: inherit; }
 .choice-card { @apply flex cursor-pointer gap-3 rounded-2xl border border-slate-200 bg-white/70 p-4 transition hover:border-forest-700/40 hover:bg-white; }
 .choice-card:has(input:checked) { @apply border-forest-700/40 bg-forest-50; }
 .deadline-draft-card { @apply rounded-[1.35rem] border border-slate-200/90 bg-[#fbfaf7]/80 p-4 sm:p-5; }
+.deadline-type-choice { @apply flex cursor-pointer items-center gap-3 rounded-2xl border border-slate-200 bg-white/70 p-3 text-sm transition hover:border-forest-700/40; }
+.deadline-type-choice:has(input:checked) { @apply border-forest-700/40 bg-forest-50; }
+.deadline-type-choice input { @apply size-4 shrink-0 accent-[#2c6652]; }
+.deadline-type-choice strong { @apply block font-black text-forest-950; }
+.deadline-type-choice small { @apply mt-0.5 block text-[.68rem] text-slate-400; }
 .deadline-inline-option { @apply flex cursor-pointer items-start gap-2 rounded-xl border border-slate-200 bg-white/70 px-3 py-2.5 text-sm transition hover:border-forest-700/40; }
 .deadline-inline-option:has(input:checked) { @apply border-forest-700/35 bg-forest-50; }
 .deadline-inline-option input { @apply mt-1 size-4 accent-[#2c6652]; }
