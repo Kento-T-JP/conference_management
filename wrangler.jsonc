@@ -28,7 +28,7 @@
         {
           "binding": "DB",
           "database_name": "conference-management",
-          "database_id": "REPLACE_WITH_PRODUCTION_D1_DATABASE_ID",
+          "database_id": "29dc0cd7-b7f6-40fc-89c3-43a8764f6899",
           "migrations_dir": "migrations"
         }
       ],
