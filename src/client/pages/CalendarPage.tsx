@@ -2,7 +2,6 @@ import FullCalendar from '@fullcalendar/react';
 import dayGridPlugin from '@fullcalendar/daygrid';
 import interactionPlugin, { type DateClickArg } from '@fullcalendar/interaction';
 import multiMonthPlugin from '@fullcalendar/multimonth';
-import timeGridPlugin from '@fullcalendar/timegrid';
 import luxonPlugin from '@fullcalendar/luxon3';
 import jaLocale from '@fullcalendar/core/locales/ja';
 import type { DatesSetArg, EventClickArg, EventContentArg, EventSourceFuncArg } from '@fullcalendar/core';
@@ -26,8 +25,6 @@ interface CalendarEvent {
 
 const viewOptions = [
   { value: 'dayGridMonth', label: '月' },
-  { value: 'timeGridWeek', label: '週' },
-  { value: 'timeGridDay', label: '日' },
   { value: 'multiMonthYear', label: '年' }
 ];
 
@@ -123,7 +120,7 @@ export function CalendarPage() {
   }
 
   return <>
-    <PageHeader title="カレンダー" description="締切と開催日程を、月・週・日・年の表示で確認できます。" />
+    <PageHeader title="カレンダー" description="締切と開催日程を、月・年の表示で確認できます。" />
     {calendarError && <div className="mb-4 rounded-2xl border border-red-200 bg-red-50 p-4 text-sm font-semibold text-red-800" role="alert">カレンダーを読み込めませんでした。{calendarError}</div>}
     <section className="calendar-app">
       <div className="calendar-commandbar">
@@ -148,7 +145,7 @@ export function CalendarPage() {
         <div className="calendar-main">
           <FullCalendar
             ref={calendarRef}
-            plugins={[dayGridPlugin, timeGridPlugin, interactionPlugin, multiMonthPlugin, luxonPlugin]}
+            plugins={[dayGridPlugin, interactionPlugin, multiMonthPlugin, luxonPlugin]}
             initialView="dayGridMonth"
             locales={[jaLocale]}
             locale="ja"
@@ -160,13 +157,7 @@ export function CalendarPage() {
             moreLinkText={(count) => `他${count}件`}
             multiMonthMaxColumns={3}
             multiMonthMinWidth={220}
-            nowIndicator
             stickyHeaderDates
-            allDayText="終日"
-            slotMinTime="06:00:00"
-            slotMaxTime="24:00:00"
-            scrollTime="08:00:00"
-            slotDuration="00:30:00"
             eventTimeFormat={{ hour: '2-digit', minute: '2-digit', hour12: false }}
             defaultTimedEventDuration="00:00:01"
             events={eventSource}
