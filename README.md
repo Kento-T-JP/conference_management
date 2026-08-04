@@ -133,6 +133,8 @@ GitHub RepositoryのSettings → Secrets and variables → Actionsに以下を�
 
 通知対象は新規開催回、締切変更、設定した日数前のリマインド、週次まとめです。リマインド日数と週次まとめの有効・無効は「設定」画面から変更できます。Slack送信に失敗しても学会・開催回・締切の保存結果は維持され、`notification_logs`へ失敗が残ります。Webhook未設定時は通知を`skipped`として記録します。
 
+`.dev.vars.example`には実際のWebhook URLを入れていません。ローカルでSlackを使う場合だけ、コピー後の`.dev.vars`へ実際の`SLACK_WEBHOOK_URL`を追加してください。サンプル文字列やSlack以外のURLは「未設定」と判定されます。
+
 ## Cron Triggers
 
 `wrangler.jsonc`では次を設定しています。

@@ -9,13 +9,27 @@ interface NotificationOptions {
   text: string;
 }
 
+export function isSlackWebhookConfigured(value?: string): value is string {
+  if (!value) return false;
+  const webhookUrl = value.trim();
+  if (!webhookUrl || /EXAMPLE|NOT-A-REAL/i.test(webhookUrl)) return false;
+
+  try {
+    const url = new URL(webhookUrl);
+    const isSlackHost = url.hostname === 'hooks.slack.com' || url.hostname === 'hooks.slack-gov.com';
+    return url.protocol === 'https:' && isSlackHost && /^\/services\/[^/]+\/[^/]+\/[^/]+$/.test(url.pathname);
+  } catch {
+    return false;
+  }
+}
+
 export async function sendSlack(env: Env, options: NotificationOptions): Promise<'sent' | 'failed' | 'skipped'> {
   const existing = await env.DB.prepare(`SELECT status FROM notification_logs WHERE notification_type=? AND conference_edition_id IS ? AND deadline_id IS ? AND scheduled_date=?`)
     .bind(options.type, options.editionId, options.deadlineId, options.scheduledDate).first<{ status: string }>();
   if (existing?.status === 'sent') return 'skipped';
 
   const now = nowSql();
-  if (!env.SLACK_WEBHOOK_URL) {
+  if (!isSlackWebhookConfigured(env.SLACK_WEBHOOK_URL)) {
     await upsertLog(env.DB, options, 'skipped', null, 'Webhookが未設定です。', null);
     return 'skipped';
   }

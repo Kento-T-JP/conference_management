@@ -3,7 +3,7 @@ import { z } from 'zod';
 import type { SlackSettingsData } from '../../shared/types';
 import type { Env } from '../index';
 import { ApiError, errorResponse, nowSql } from '../lib/api';
-import { sendSlack } from '../services/slack';
+import { isSlackWebhookConfigured, sendSlack } from '../services/slack';
 
 const notificationSettingsSchema = z.object({
   reminder_days: z.array(z.number().int().min(1).max(90)).max(8),
@@ -21,7 +21,7 @@ settingsRoutes.get('/slack', async (c) => {
     const values = new Map((settings.results as Array<{ key: string; value: string }>).map((row) => [row.key, row.value]));
     const last = lastDelivery.results[0] as SlackSettingsData['last_delivery'] | undefined;
     return c.json({ data: {
-      configured: Boolean(c.env.SLACK_WEBHOOK_URL?.trim()),
+      configured: isSlackWebhookConfigured(c.env.SLACK_WEBHOOK_URL),
       reminder_days: parseReminderDays(values.get('reminder_days')),
       weekly_enabled: values.get('weekly_enabled') !== 'false',
       last_delivery: last ?? null
@@ -45,7 +45,7 @@ settingsRoutes.put('/notifications', async (c) => {
 
 settingsRoutes.post('/slack/test', async (c) => {
   try {
-    if (!c.env.SLACK_WEBHOOK_URL?.trim()) throw new ApiError(409, 'SLACK_NOT_CONFIGURED', 'Slack Incoming Webhookが設定されていません。');
+    if (!isSlackWebhookConfigured(c.env.SLACK_WEBHOOK_URL)) throw new ApiError(409, 'SLACK_NOT_CONFIGURED', 'Slack Incoming Webhookが設定されていません。');
     const now = nowSql();
     const status = await sendSlack(c.env, {
       type: 'slack_test',

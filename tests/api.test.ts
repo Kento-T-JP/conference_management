@@ -99,12 +99,12 @@ describe('API', () => {
         ];
       }
     } as unknown as D1Database;
-    const env = { APP_BASE_URL: 'http://localhost:5173', ENVIRONMENT: 'test', SLACK_WEBHOOK_URL: 'https://hooks.slack.test/secret', DB: db } satisfies Env;
+    const env = { APP_BASE_URL: 'http://localhost:5173', ENVIRONMENT: 'test', SLACK_WEBHOOK_URL: 'https://hooks.slack.com/services/T_TEST/B_TEST/TEST_TOKEN', DB: db } satisfies Env;
     const ctx = { waitUntil() {}, passThroughOnException() {}, props: {} } as unknown as ExecutionContext;
     const response = await worker.fetch(new Request('http://localhost/api/settings/slack'), env, ctx);
     expect(response.status).toBe(200);
     const body = await response.json() as { data: Record<string, unknown> };
     expect(body.data).toMatchObject({ configured: true, reminder_days: [14, 7, 1], weekly_enabled: true });
-    expect(JSON.stringify(body)).not.toContain('hooks.slack.test');
+    expect(JSON.stringify(body)).not.toContain('hooks.slack.com');
   });
 });
