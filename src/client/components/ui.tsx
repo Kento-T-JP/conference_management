@@ -30,7 +30,14 @@ export function EmptyState({ title, body, action, href, linkLabel }: { title: st
   return <div className="surface px-6 py-14 text-center">{content}{action && <div className="mt-6">{action}</div>}</div>;
 }
 
-export function Loading() { return <div className="surface animate-pulse p-8 text-sm text-slate-500">情報を読み込んでいます…</div>; }
+export function Loading({ label = '情報を読み込んでいます…' }: { label?: string }) {
+  return <div className="surface flex min-h-40 items-center justify-center p-8" role="status" aria-live="polite" aria-busy="true">
+    <div className="flex items-center gap-4">
+      <span className="grid size-11 shrink-0 place-items-center rounded-full bg-forest-50" aria-hidden="true"><span className="size-5 animate-spin rounded-full border-2 border-forest-700/20 border-t-forest-700" /></span>
+      <span><strong className="block text-sm font-black text-forest-950">読み込み中</strong><small className="mt-1 block text-xs leading-5 text-slate-500">{label}</small></span>
+    </div>
+  </div>;
+}
 
 export function ErrorState({ message, retry }: { message: string; retry?: () => void }) { return <div className="rounded-2xl border border-red-200 bg-red-50 p-5 text-sm text-red-800"><strong>読み込みに失敗しました。</strong><p className="mt-1">{message}</p>{retry && <button className="mt-3 font-bold underline" onClick={retry}>再試行</button>}</div>; }
 
