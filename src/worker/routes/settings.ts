@@ -3,7 +3,7 @@ import { z } from 'zod';
 import type { SlackSettingsData } from '../../shared/types';
 import type { Env } from '../index';
 import { ApiError, errorResponse, nowSql } from '../lib/api';
-import { isSlackWebhookConfigured, sendSlack } from '../services/slack';
+import { isSlackWebhookConfigured, sendSlack, slackTestMessage } from '../services/slack';
 
 const notificationSettingsSchema = z.object({
   reminder_days: z.array(z.number().int().min(1).max(90)).max(8),
@@ -52,7 +52,7 @@ settingsRoutes.post('/slack/test', async (c) => {
       editionId: null,
       deadlineId: null,
       scheduledDate: now,
-      text: `✅ 篠宮研究室 学会管理からのテスト通知です。\nSlack連携は正常に動作しています。\n${c.env.APP_BASE_URL}`
+      text: slackTestMessage(c.env.APP_BASE_URL)
     });
     if (status !== 'sent') throw new ApiError(500, 'SLACK_TEST_FAILED', 'テスト通知を送信できませんでした。設定を確認してください。');
     return c.json({ data: { status: 'sent', sent_at: now } });

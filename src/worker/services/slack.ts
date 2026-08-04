@@ -9,6 +9,20 @@ interface NotificationOptions {
   text: string;
 }
 
+const DEADLINE_LABELS: Record<string, string> = {
+  Abstract: 'アブストラクト',
+  'Full Paper': '論文投稿',
+  'Short Paper': 'ショートペーパー',
+  Poster: 'ポスター',
+  Workshop: 'ワークショップ',
+  'Camera-ready': '最終原稿',
+  'Author Notification': '採否通知',
+  Registration: '参加登録',
+  Other: 'その他'
+};
+
+const WEEKDAYS = ['日', '月', '火', '水', '木', '金', '土'];
+
 export function isSlackWebhookConfigured(value?: string): value is string {
   if (!value) return false;
   const webhookUrl = value.trim();
@@ -61,10 +75,103 @@ async function upsertLog(db: D1Database, options: NotificationOptions, status: s
 
 export function editionMessage(edition: Record<string, unknown>, baseUrl: string): string {
   const place = [edition.city, edition.country].filter(Boolean).join(', ') || '未定';
-  const dates = edition.start_date ? `${edition.start_date}${edition.end_date ? `〜${edition.end_date}` : ''}` : '未定';
-  return `📌 新しい学会開催回: ${edition.acronym} ${edition.year}\n開催: ${dates} / ${place}\n分野: ${edition.fields || '未設定'}\n詳細: ${baseUrl}/editions/${edition.id}\n公式: ${edition.official_url || edition.conference_official_url}`;
+  const dates = edition.start_date ? `${formatJapaneseDate(edition.start_date)}${edition.end_date ? `〜${formatJapaneseDate(edition.end_date)}` : ''}` : '未定';
+  const fields = formatFields(edition.fields);
+  const detail = slackLink(`${baseUrl}/editions/${edition.id}`, '開催回の詳細');
+  const official = slackLink(edition.official_url || edition.conference_official_url, '公式サイト');
+  return [
+    '📌 *新しい開催回を登録しました*',
+    `*${escapeSlackText(edition.acronym)} ${escapeSlackText(edition.year)}*`,
+    `開催日：${dates}`,
+    `開催地：${escapeSlackText(place)}`,
+    `開催形式：${escapeSlackText(edition.attendance_format || '未定')}`,
+    `分野：${fields}`,
+    [detail, official].filter(Boolean).join('  |  ')
+  ].join('\n');
 }
 
 export function deadlineChangedMessage(row: Record<string, unknown>, oldDeadline: string, baseUrl: string): string {
-  return `⏰ 締切変更: ${row.acronym} ${row.year} / ${row.deadline_type}\n旧: ${oldDeadline}\n新: ${row.deadline_at}${row.is_aoe ? ' (AoE)' : ''}\n詳細: ${baseUrl}/editions/${row.conference_edition_id}`;
+  return [
+    '⏰ *締切が変更されました*',
+    `*${conferenceDeadlineTitle(row)}*`,
+    `変更前：${formatDeadlineDate(oldDeadline, row)}`,
+    `変更後：${formatDeadlineDate(row.deadline_at, row)}`,
+    slackLink(`${baseUrl}/editions/${row.conference_edition_id}`, '開催回の詳細')
+  ].join('\n');
+}
+
+export function reminderMessage(row: Record<string, unknown>, days: number, baseUrl: string): string {
+  return [
+    days === 1 ? '⏳ *締切は明日です*' : `⏳ *締切まであと${days}日*`,
+    `*${conferenceDeadlineTitle(row)}*`,
+    `締切：${formatDeadlineDate(row.deadline_at, row)}`,
+    slackLink(`${baseUrl}/editions/${row.conference_edition_id}`, '開催回の詳細')
+  ].join('\n');
+}
+
+export function weeklySummaryMessage(deadlines: Record<string, unknown>[], recent: Record<string, unknown>[], baseUrl: string): string {
+  const sections = ['📅 *今週の学会予定*'];
+  if (deadlines.length) {
+    const lines = deadlines.map((row) => `• *${conferenceDeadlineTitle(row)}*\n  ${formatDeadlineDate(row.deadline_at, row)}`);
+    sections.push(`*90日以内の締切*\n${lines.join('\n')}`);
+  }
+  if (recent.length) {
+    const lines = recent.map((row) => `• ${slackLink(`${baseUrl}/editions/${row.edition_id || row.id}`, `${row.acronym} ${row.year}`)}`);
+    sections.push(`*最近追加された開催回*\n${lines.join('\n')}`);
+  }
+  sections.push(slackLink(baseUrl, '学会管理を開く'));
+  return sections.join('\n\n');
+}
+
+export function slackTestMessage(baseUrl: string): string {
+  return `✅ *Slack連携テストに成功しました*\n篠宮研究室 学会管理から通知を送信できています。\n${slackLink(baseUrl, '学会管理を開く')}`;
+}
+
+function conferenceDeadlineTitle(row: Record<string, unknown>): string {
+  const base = DEADLINE_LABELS[String(row.deadline_type)] || String(row.deadline_type || '締切');
+  const custom = String(row.title || '').trim();
+  const label = custom && custom !== base ? `${base}（${custom}）` : base;
+  return `${escapeSlackText(row.acronym)} ${escapeSlackText(row.year)} — ${escapeSlackText(label)}`;
+}
+
+function formatDeadlineDate(value: unknown, row: Record<string, unknown>): string {
+  const date = formatJapaneseDate(value, row.has_time !== 0);
+  const timezone = row.is_aoe ? 'AoE' : String(row.timezone || '').trim();
+  return timezone ? `${date}（${escapeSlackText(timezone)}）` : date;
+}
+
+function formatJapaneseDate(value: unknown, includeTime = true): string {
+  const text = String(value || '');
+  const match = /^(\d{4})-(\d{2})-(\d{2})(?:T(\d{2}):(\d{2}))?/.exec(text);
+  if (!match) return escapeSlackText(text || '未定');
+  const [, year, month, day, hour, minute] = match;
+  const weekday = WEEKDAYS[new Date(Date.UTC(Number(year), Number(month) - 1, Number(day))).getUTCDay()];
+  const time = includeTime && hour && minute ? ` ${hour}:${minute}` : '';
+  return `${Number(year)}年${Number(month)}月${Number(day)}日（${weekday}）${time}`;
+}
+
+function formatFields(value: unknown): string {
+  if (Array.isArray(value)) return value.length ? value.map(escapeSlackText).join('・') : '未設定';
+  if (typeof value === 'string') {
+    try {
+      const parsed: unknown = JSON.parse(value);
+      if (Array.isArray(parsed)) return parsed.length ? parsed.map(escapeSlackText).join('・') : '未設定';
+    } catch { /* plain text is handled below */ }
+    return value.trim() ? escapeSlackText(value) : '未設定';
+  }
+  return '未設定';
+}
+
+function slackLink(value: unknown, label: unknown): string {
+  try {
+    const url = new URL(String(value || ''));
+    if (url.protocol !== 'https:' && url.protocol !== 'http:') return escapeSlackText(label);
+    return `<${url.toString().replaceAll('|', '%7C')}|${escapeSlackText(label)}>`;
+  } catch {
+    return escapeSlackText(label);
+  }
+}
+
+function escapeSlackText(value: unknown): string {
+  return String(value ?? '').replaceAll('&', '&amp;').replaceAll('<', '&lt;').replaceAll('>', '&gt;');
 }
