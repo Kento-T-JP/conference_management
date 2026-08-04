@@ -24,6 +24,7 @@
     "@fullcalendar/interaction": "^6.1.19",
     "@fullcalendar/multimonth": "^6.1.21",
     "@fullcalendar/react": "^6.1.19",
+    "@fullcalendar/timegrid": "^6.1.21",
     "date-fns": "^4.1.0",
     "hono": "^4.9.8",
     "react": "^19.1.1",
