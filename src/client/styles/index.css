@@ -60,6 +60,9 @@ a { color: inherit; }
 .btn-secondary {
   @apply inline-flex min-h-11 items-center justify-center rounded-full border border-[#d7d3c9] bg-white/75 px-5 py-2 text-sm font-black text-forest-900 transition duration-200 hover:-translate-y-0.5 hover:border-forest-700 hover:bg-white;
 }
+.btn-danger {
+  @apply inline-flex min-h-11 items-center justify-center rounded-full border border-red-200 bg-red-50 px-5 py-2 text-sm font-black text-red-700 transition duration-200 hover:-translate-y-0.5 hover:border-red-300 hover:bg-red-100 disabled:cursor-not-allowed disabled:opacity-50;
+}
 .chip { @apply inline-flex items-center rounded-full px-2.5 py-1 text-xs font-bold; }
 
 .page-header h1 { letter-spacing: -.045em; }

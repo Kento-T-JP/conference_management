@@ -9,6 +9,7 @@ import { useMemo, useRef, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { CALENDAR_EVENT_GROUPS, CONFERENCE_TYPES } from '../../shared/constants';
 import { api, queryString } from '../lib/api';
+import { deadlineName } from '../lib/deadlineDraft';
 import { PageHeader } from '../components/ui';
 
 interface CalendarEvent {
@@ -18,7 +19,7 @@ interface CalendarEvent {
   end?: string;
   allDay: boolean;
   url: string;
-  extendedProps: { kind: string; status: string; deadlineType?: string; aoe?: boolean };
+  extendedProps: { kind: string; status: string; deadlineType?: string; aoe?: boolean; editionId?: number; conferenceName?: string };
 }
 
 const viewOptions = [
@@ -45,7 +46,7 @@ export function CalendarPage() {
     try {
       const { data } = await api<{ data: CalendarEvent[] }>(`/api/calendar/events${queryString({ start: info.startStr.slice(0, 10), end: info.endStr.slice(0, 10), event_categories: categories.length ? categories.join(',') : 'none', conference_types: conferenceType, fields: field.trim() })}`);
       const query = search.trim().toLocaleLowerCase('ja');
-      const filtered = query ? data.filter((event) => `${event.title} ${event.extendedProps.deadlineType ?? ''} ${groupLabel(event.extendedProps.kind)}`.toLocaleLowerCase('ja').includes(query)) : data;
+      const filtered = query ? data.filter((event) => `${event.title} ${event.extendedProps.conferenceName ?? ''} ${event.extendedProps.deadlineType ?? ''} ${deadlineName(event.extendedProps.deadlineType ?? '')} ${groupLabel(event.extendedProps.kind)}`.toLocaleLowerCase('ja').includes(query)) : data;
       setVisibleEvents(filtered);
       success(filtered);
     } catch (error) {
@@ -172,7 +173,7 @@ function renderEvent(arg: EventContentArg) {
 }
 
 function EventDetail({ event, onOpen }: { event: CalendarEvent; onOpen: () => void }) {
-  return <><p className="section-kicker">{groupLabel(event.extendedProps.kind)}</p><h2 className="mt-2 pr-10 text-2xl font-black text-forest-950">{cleanEventTitle(event.title)}</h2><div className="mt-5 flex gap-3"><span className={`calendar-detail-color calendar-detail-color--${event.extendedProps.kind}`} /><div><p className="font-bold">{formatCalendarDate(event.start, event.allDay)}</p>{event.end && <p className="mt-1 text-sm text-slate-500">終了：{formatCalendarEndDate(event.end, event.allDay)}</p>}{event.extendedProps.aoe && <p className="mt-1 text-sm text-slate-500">AoE（世界のどこかでその日が終わるまで）</p>}</div></div><dl className="mt-6 grid grid-cols-2 gap-3 text-sm"><div className="rounded-2xl bg-slate-50 p-3"><dt className="text-xs font-bold text-slate-400">種類</dt><dd className="mt-1 font-bold">{event.extendedProps.deadlineType ?? groupLabel(event.extendedProps.kind)}</dd></div><div className="rounded-2xl bg-slate-50 p-3"><dt className="text-xs font-bold text-slate-400">公式サイトで確認</dt><dd className="mt-1 font-bold">{event.extendedProps.status === '公式' ? '確認済み' : '未確認'}</dd></div></dl><button type="button" className="btn-primary mt-7 w-full" onClick={onOpen}>開催回の詳細を見る</button></>;
+  return <><p className="section-kicker">{groupLabel(event.extendedProps.kind)}</p><h2 className="mt-2 pr-10 text-2xl font-black text-forest-950">{cleanEventTitle(event.title)}</h2>{event.extendedProps.conferenceName && <p className="mt-2 text-sm text-slate-500">{event.extendedProps.conferenceName}</p>}<div className="mt-5 flex gap-3"><span className={`calendar-detail-color calendar-detail-color--${event.extendedProps.kind}`} /><div><p className="font-bold">{formatCalendarDate(event.start, event.allDay)}</p>{event.end && <p className="mt-1 text-sm text-slate-500">終了：{formatCalendarEndDate(event.end, event.allDay)}</p>}{event.extendedProps.aoe && <p className="mt-1 text-sm text-slate-500">AoE（世界のどこかでその日が終わるまで）</p>}</div></div><dl className="mt-6 grid grid-cols-2 gap-3 text-sm"><div className="rounded-2xl bg-slate-50 p-3"><dt className="text-xs font-bold text-slate-400">種類</dt><dd className="mt-1 font-bold">{event.extendedProps.deadlineType ?? groupLabel(event.extendedProps.kind)}</dd></div><div className="rounded-2xl bg-slate-50 p-3"><dt className="text-xs font-bold text-slate-400">公式サイトで確認</dt><dd className="mt-1 font-bold">{event.extendedProps.status === '公式' ? '確認済み' : '未確認'}</dd></div></dl><button type="button" className="btn-primary mt-7 w-full" onClick={onOpen}>学会の詳細・管理へ</button></>;
 }
 
 function DayDetail({ date, events, onSelect }: { date: string; events: CalendarEvent[]; onSelect: (event: CalendarEvent) => void }) {

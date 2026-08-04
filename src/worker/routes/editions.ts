@@ -75,6 +75,22 @@ editionRoutes.put('/:id', async (c) => {
   } catch (error) { return errorResponse(c, error); }
 });
 
+editionRoutes.delete('/:id', async (c) => {
+  try {
+    const id = parseId(c.req.param('id'));
+    const current = await c.env.DB.prepare(`SELECT e.id, e.conference_id, e.year,
+      (SELECT COUNT(*) FROM conference_deadlines d WHERE d.conference_edition_id=e.id) deadline_count
+      FROM conference_editions e WHERE e.id=?`).bind(id).first<{ id: number; conference_id: number; year: number; deadline_count: number }>();
+    if (!current) throw new ApiError(404, 'NOT_FOUND', '開催回が見つかりません。');
+    await c.env.DB.batch([
+      c.env.DB.prepare(`DELETE FROM notification_logs WHERE conference_edition_id=? OR deadline_id IN (SELECT id FROM conference_deadlines WHERE conference_edition_id=?)`).bind(id, id),
+      c.env.DB.prepare('DELETE FROM conference_deadlines WHERE conference_edition_id=?').bind(id),
+      c.env.DB.prepare('DELETE FROM conference_editions WHERE id=?').bind(id)
+    ]);
+    return c.json({ data: { id, conference_id: current.conference_id, year: current.year, deleted_deadlines: current.deadline_count } });
+  } catch (error) { return errorResponse(c, error); }
+});
+
 for (const action of ['archive', 'restore'] as const) {
   editionRoutes.post(`/:id/${action}`, async (c) => {
     try {

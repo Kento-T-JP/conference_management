@@ -1,5 +1,5 @@
 import { type FormEvent, useEffect, useState } from 'react';
-import { Link, useNavigate, useParams } from 'react-router-dom';
+import { Link, useParams } from 'react-router-dom';
 import type { ConferenceDeadline, ConferenceEdition } from '../../shared/types';
 import { api } from '../lib/api';
 import { useApi } from '../hooks/useApi';
@@ -9,7 +9,6 @@ import { type DeadlineDraft, deadlineLabel, deadlinePayload } from '../lib/deadl
 
 export function EditionDetailPage() {
   const { id } = useParams();
-  const navigate = useNavigate();
   const searchParams = new URLSearchParams(window.location.search);
   const setup = searchParams.get('setup') === '1';
   const addDeadline = searchParams.get('add') === 'deadline';
@@ -27,19 +26,6 @@ export function EditionDetailPage() {
 
   if (loading) return <Loading />;
   if (error || !data) return <ErrorState message={error ?? '開催回が見つかりません。'} retry={reload} />;
-
-  async function archive() {
-    if (!confirm('この開催回をアーカイブしますか？')) return;
-    await api(`/api/editions/${id}/archive`, { method: 'POST' });
-    navigate(`/conferences/${data!.conference_id}`);
-  }
-
-  async function duplicate() {
-    try {
-      const { data: created } = await api<{ data: ConferenceEdition }>(`/api/editions/${id}/duplicate-next-year`, { method: 'POST' });
-      navigate(`/editions/${created.id}`);
-    } catch (e) { setMessage(e instanceof Error ? e.message : '複製に失敗しました。'); }
-  }
 
   async function submitDeadlines(event: FormEvent) {
     event.preventDefault();
@@ -101,10 +87,10 @@ export function EditionDetailPage() {
 
   const officialUrl = data.official_url || data.conference_official_url;
   return <>
-    <PageHeader title={`${data.acronym} ${data.year}`} description={data.conference_name} action={<div className="flex flex-wrap gap-2"><Link className="btn-secondary" to={`/editions/${id}/edit`}>編集</Link><button className="btn-secondary" onClick={duplicate}>次年度へ複製</button><button className="btn-primary" onClick={startCreate}>＋ 締切を追加</button></div>} />
+    <PageHeader title={`${data.acronym} ${data.year}`} description={data.conference_name} action={<div className="flex flex-wrap gap-2"><Link className="btn-secondary" to={`/conferences/${data.conference_id}`}>← 学会の詳細・管理</Link><button className="btn-primary" onClick={startCreate}>＋ 締切を追加</button></div>} />
     {message && <div className="mb-5 rounded-xl border border-amber-200 bg-amber-50 p-4 text-sm text-amber-900">{message}</div>}
     <div className="grid gap-6 lg:grid-cols-[1fr_2fr]">
-      <aside className="surface h-fit p-5"><div className="flex items-center justify-between"><h2 className="font-black">開催情報</h2><StatusBadge value={data.information_status} /></div><dl className="mt-5 space-y-4 text-sm"><Info label="開催期間" value={`${formatDate(data.start_date)}${data.end_date ? ` 〜 ${formatDate(data.end_date)}` : ''}`} /><Info label="開催地" value={[data.city, data.country].filter(Boolean).join(', ') || '未定'} /><Info label="開催形式" value={data.attendance_format} /><Info label="タイムゾーン" value={data.timezone || '未設定'} /><Info label="備考" value={data.notes || 'なし'} /></dl>{officialUrl && <a className="btn-secondary mt-5 w-full" href={officialUrl} target="_blank" rel="noopener noreferrer">公式ページを開く ↗</a>}<button onClick={archive} className="mt-3 w-full text-sm font-bold text-slate-500 hover:text-red-700">アーカイブ</button></aside>
+      <aside className="surface h-fit p-5"><div className="flex items-center justify-between"><h2 className="font-black">開催情報</h2><StatusBadge value={data.information_status} /></div><dl className="mt-5 space-y-4 text-sm"><Info label="開催期間" value={`${formatDate(data.start_date)}${data.end_date ? ` 〜 ${formatDate(data.end_date)}` : ''}`} /><Info label="開催地" value={[data.city, data.country].filter(Boolean).join(', ') || '未定'} /><Info label="開催形式" value={data.attendance_format} /><Info label="タイムゾーン" value={data.timezone || '未設定'} /><Info label="備考" value={data.notes || 'なし'} /></dl>{officialUrl && <a className="btn-secondary mt-5 w-full" href={officialUrl} target="_blank" rel="noopener noreferrer">公式ページを開く ↗</a>}</aside>
       <section id="deadlines"><h2 className="mb-3 text-xl font-black text-forest-950">締切一覧</h2>{!data.deadlines?.length ? <EmptyState title="締切が未登録です" body="必要な締切を選び、表示された項目だけ入力できます。" action={<button className="btn-primary" onClick={startCreate}>締切を追加</button>} /> : <div className="surface divide-y divide-slate-100 overflow-hidden">{data.deadlines.map((deadline) => <div key={deadline.id} className="grid gap-3 p-5 sm:grid-cols-[1fr_auto] sm:items-center"><div><div className="flex flex-wrap items-center gap-2"><h3 className="font-black">{deadline.title || deadlineLabel(deadline.deadline_type)}</h3><StatusBadge value={deadline.information_status} />{deadline.is_extended ? <span className="chip bg-blue-100 text-blue-800">延長</span> : null}</div><p className="mt-2 text-sm font-semibold">{formatDate(deadline.deadline_at, Boolean(deadline.has_time))}{deadline.is_aoe ? ' (AoE)' : deadline.timezone ? ` (${deadline.timezone})` : ''}</p>{deadline.previous_deadline_at && <p className="mt-1 text-xs text-slate-500">旧締切: {formatDate(deadline.previous_deadline_at, true)}</p>}</div><div className="flex items-center gap-3"><DeadlineBadge date={deadline.deadline_at} aoe={Boolean(deadline.is_aoe)} hasTime={Boolean(deadline.has_time)} /><button className="text-sm font-bold text-forest-700" onClick={() => edit(deadline)}>編集</button><button className="text-sm font-bold text-slate-400 hover:text-red-700" onClick={() => remove(deadline.id)}>削除</button></div></div>)}</div>}</section>
     </div>
 

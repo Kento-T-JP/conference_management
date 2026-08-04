@@ -26,7 +26,7 @@ export function DashboardPage() {
           <p className="mt-2 text-sm font-bold text-white/80">{nextDeadline.next_deadline_type}</p>
           <p className="mt-1 text-sm text-white/65">{formatDate(nextDeadline.next_deadline, true)}{Boolean((nextDeadline as unknown as { is_aoe: number }).is_aoe) && ' (AoE)'}</p>
           <span className="mt-4 inline-flex text-xs font-black text-[#ffd4c8]">詳細を見る →</span>
-        </Link> : nextEdition ? <Link to={`/editions/${nextEdition.id}`} className="mt-4 block rounded-2xl outline-none transition hover:bg-white/5 focus-visible:bg-white/5">
+        </Link> : nextEdition ? <Link to={`/conferences/${nextEdition.conference_id}`} className="mt-4 block rounded-2xl outline-none transition hover:bg-white/5 focus-visible:bg-white/5">
           <div className="flex flex-wrap items-baseline gap-2"><strong className="text-2xl font-black tracking-[-.04em]">{nextEdition.acronym}</strong><span className="text-sm font-bold text-white/60">{nextEdition.year}</span></div>
           <p className="mt-2 text-sm font-bold text-white/80">開催予定</p>
           <p className="mt-1 text-sm text-white/65">{formatDate(nextEdition.start_date)} · {[nextEdition.city, nextEdition.country].filter(Boolean).join(', ') || '開催地未定'}</p>
@@ -53,13 +53,13 @@ export function DashboardPage() {
           <div className="surface p-4">{data.missing_next_editions.length ? <ul className="space-y-3">{data.missing_next_editions.map((item) => <li key={item.id} className="flex items-center justify-between gap-3"><Link className="font-bold text-forest-900 hover:underline" to={`/conferences/${item.id}`}>{item.acronym}</Link><span className="chip bg-amber-100 text-amber-900">{item.expected_year}年</span></li>)}</ul> : <p className="text-sm text-slate-500">未登録の定期開催学会はありません。</p>}</div>
         </section>
         <section><SectionTitle title="情報の確認が必要" />
-          <div className="surface p-4">{data.unconfirmed.length ? <ul className="space-y-3">{data.unconfirmed.slice(0, 6).map((item) => <li key={item.id} className="flex items-center justify-between gap-3"><Link className="font-bold text-forest-900 hover:underline" to={`/editions/${item.id}`}>{item.acronym} {item.year}</Link><StatusBadge value={item.information_status} /></li>)}</ul> : <p className="text-sm text-slate-500">確認待ちの開催回はありません。</p>}</div>
+          <div className="surface p-4">{data.unconfirmed.length ? <ul className="space-y-3">{data.unconfirmed.slice(0, 6).map((item) => <li key={item.id} className="flex items-center justify-between gap-3"><Link className="font-bold text-forest-900 hover:underline" to={`/conferences/${item.conference_id}`}>{item.acronym} {item.year}</Link><StatusBadge value={item.information_status} /></li>)}</ul> : <p className="text-sm text-slate-500">確認待ちの開催回はありません。</p>}</div>
         </section>
       </div>
     </div>
 
     <section className="mt-8"><SectionTitle title="今後開催される学会" link="/calendar" />
-      <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">{data.upcoming_editions.slice(0, 6).map((item) => <Link to={`/editions/${item.id}`} key={item.id} className="surface p-5 transition hover:-translate-y-0.5 hover:border-forest-700"><div className="flex items-start justify-between gap-3"><h3 className="text-lg font-black text-forest-950">{item.acronym} {item.year}</h3><StatusBadge value={item.information_status} /></div><p className="mt-3 text-sm text-slate-600">{formatDate(item.start_date)}{item.end_date && ` 〜 ${formatDate(item.end_date)}`}</p><p className="mt-1 text-sm text-slate-500">{[item.city, item.country].filter(Boolean).join(', ') || '開催地未定'} · {item.attendance_format}</p></Link>)}</div>
+      <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">{data.upcoming_editions.slice(0, 6).map((item) => <Link to={`/conferences/${item.conference_id}`} key={item.id} className="surface p-5 transition hover:-translate-y-0.5 hover:border-forest-700"><div className="flex items-start justify-between gap-3"><h3 className="text-lg font-black text-forest-950">{item.acronym} {item.year}</h3><StatusBadge value={item.information_status} /></div><p className="mt-3 text-sm text-slate-600">{formatDate(item.start_date)}{item.end_date && ` 〜 ${formatDate(item.end_date)}`}</p><p className="mt-1 text-sm text-slate-500">{[item.city, item.country].filter(Boolean).join(', ') || '開催地未定'} · {item.attendance_format}</p></Link>)}</div>
     </section>
   </>;
 }
