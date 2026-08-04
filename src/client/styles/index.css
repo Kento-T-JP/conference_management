@@ -28,6 +28,8 @@ body::before {
   mask-image: linear-gradient(to bottom, black, transparent 65%);
 }
 button, input, select, textarea { font: inherit; }
+button, select { cursor: pointer; }
+button:disabled, select:disabled { cursor: not-allowed; }
 a { color: inherit; }
 :focus-visible { outline: 3px solid #e36f50; outline-offset: 3px; }
 
@@ -225,4 +227,8 @@ a { color: inherit; }
   .calendar-add-button { @apply col-span-2; }
   .calendar-sidebar-section { @apply mt-0 border-t-0 pt-0; }
   .calendar-legend { @apply hidden; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { scroll-behavior: auto !important; transition-duration: .01ms !important; animation-duration: .01ms !important; animation-iteration-count: 1 !important; }
 }

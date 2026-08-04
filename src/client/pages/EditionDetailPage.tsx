@@ -75,8 +75,12 @@ export function EditionDetailPage() {
 
   async function remove(deadlineId: number) {
     if (!confirm('この締切を削除しますか？')) return;
-    await api(`/api/deadlines/${deadlineId}`, { method: 'DELETE' });
-    reload();
+    setMessage('');
+    try {
+      await api(`/api/deadlines/${deadlineId}`, { method: 'DELETE' });
+      setMessage('締切を削除しました。');
+      reload();
+    } catch (e) { setMessage(e instanceof Error ? e.message : '締切の削除に失敗しました。'); }
   }
 
   function closeForm() {

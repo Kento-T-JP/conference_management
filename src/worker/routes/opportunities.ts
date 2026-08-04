@@ -8,14 +8,13 @@ export const opportunityRoutes = new Hono<{ Bindings: Env }>();
 
 opportunityRoutes.get('/dashboard/opportunities', async (c) => {
   try {
-    const [deadlines, upcoming, recent, recurring] = await c.env.DB.batch([
+    const [deadlines, upcoming, recurring] = await c.env.DB.batch([
       c.env.DB.prepare(`SELECT e.*, c.name conference_name, c.acronym, c.fields, c.conference_type,
         d.id deadline_id, d.deadline_type next_deadline_type, d.deadline_at next_deadline, d.is_aoe, d.has_time, d.information_status deadline_status
         FROM conference_deadlines d JOIN conference_editions e ON e.id=d.conference_edition_id JOIN conferences c ON c.id=e.conference_id
         WHERE c.is_archived=0 AND e.is_archived=0 AND d.deadline_at >= datetime('now') AND d.deadline_at < datetime('now','+90 days')
         ORDER BY d.deadline_at LIMIT 100`),
-      c.env.DB.prepare(`SELECT e.*, c.name conference_name, c.acronym, c.fields, c.conference_type FROM conference_editions e JOIN conferences c ON c.id=e.conference_id WHERE e.is_archived=0 AND c.is_archived=0 AND e.end_date >= date('now') ORDER BY e.start_date LIMIT 10`),
-      c.env.DB.prepare(`SELECT c.* FROM conferences c WHERE c.is_archived=0 ORDER BY c.updated_at DESC LIMIT 8`),
+      c.env.DB.prepare(`SELECT e.*, c.name conference_name, c.acronym, c.fields, c.conference_type FROM conference_editions e JOIN conferences c ON c.id=e.conference_id WHERE e.is_archived=0 AND c.is_archived=0 AND e.start_date IS NOT NULL AND COALESCE(e.end_date,e.start_date) >= date('now') ORDER BY e.start_date LIMIT 10`),
       c.env.DB.prepare(`SELECT c.*, MAX(e.year) last_year FROM conferences c JOIN conference_editions e ON e.conference_id=c.id AND e.is_archived=0 WHERE c.is_archived=0 AND c.frequency IN ('毎年','隔年') GROUP BY c.id`)
     ]);
     const missing = (recurring.results as Record<string, unknown>[]).flatMap((row) => {
@@ -31,7 +30,6 @@ opportunityRoutes.get('/dashboard/opportunities', async (c) => {
     return c.json({ data: {
       deadlines: deadlines.results.map((row) => mapEdition(row as Record<string, unknown>)),
       upcoming_editions: upcoming.results.map((row) => mapEdition(row as Record<string, unknown>)),
-      recently_updated: recent.results.map((row) => mapConference(row as Record<string, unknown>)),
       missing_next_editions: missing
     } });
   } catch (error) { return errorResponse(c, error); }

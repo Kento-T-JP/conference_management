@@ -5,7 +5,7 @@ import multiMonthPlugin from '@fullcalendar/multimonth';
 import timeGridPlugin from '@fullcalendar/timegrid';
 import jaLocale from '@fullcalendar/core/locales/ja';
 import type { DatesSetArg, EventClickArg, EventContentArg, EventSourceFuncArg } from '@fullcalendar/core';
-import { useMemo, useRef, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { CALENDAR_EVENT_GROUPS, CONFERENCE_TYPES } from '../../shared/constants';
 import { api, queryString } from '../lib/api';
@@ -39,22 +39,37 @@ export function CalendarPage() {
   const [view, setView] = useState('dayGridMonth');
   const [calendarTitle, setCalendarTitle] = useState('');
   const [visibleEvents, setVisibleEvents] = useState<CalendarEvent[]>([]);
+  const [calendarError, setCalendarError] = useState('');
   const [selectedEvent, setSelectedEvent] = useState<CalendarEvent | null>(null);
   const [selectedDay, setSelectedDay] = useState<string | null>(null);
 
   const eventSource = useMemo(() => async (info: EventSourceFuncArg, success: (events: CalendarEvent[]) => void, failure: (error: Error) => void) => {
     try {
+      setCalendarError('');
       const { data } = await api<{ data: CalendarEvent[] }>(`/api/calendar/events${queryString({ start: info.startStr.slice(0, 10), end: info.endStr.slice(0, 10), event_categories: categories.length ? categories.join(',') : 'none', conference_types: conferenceType, fields: field.trim() })}`);
       const query = search.trim().toLocaleLowerCase('ja');
       const filtered = query ? data.filter((event) => `${event.title} ${event.extendedProps.conferenceName ?? ''} ${event.extendedProps.deadlineType ?? ''} ${deadlineName(event.extendedProps.deadlineType ?? '')} ${groupLabel(event.extendedProps.kind)}`.toLocaleLowerCase('ja').includes(query)) : data;
       setVisibleEvents(filtered);
       success(filtered);
     } catch (error) {
-      failure(error instanceof Error ? error : new Error('読み込みに失敗しました。'));
+      const failureError = error instanceof Error ? error : new Error('読み込みに失敗しました。');
+      setCalendarError(failureError.message);
+      failure(failureError);
     }
   }, [categories, conferenceType, field, search]);
 
   const selectedDayEvents = selectedDay ? visibleEvents.filter((event) => occursOn(event, selectedDay)) : [];
+
+  useEffect(() => {
+    if (!selectedEvent && !selectedDay) return;
+    const previousOverflow = document.body.style.overflow;
+    document.body.style.overflow = 'hidden';
+    const close = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') { setSelectedEvent(null); setSelectedDay(null); }
+    };
+    window.addEventListener('keydown', close);
+    return () => { document.body.style.overflow = previousOverflow; window.removeEventListener('keydown', close); };
+  }, [selectedDay, selectedEvent]);
 
   function toggle(type: string) {
     setCategories((current) => current.includes(type) ? current.filter((item) => item !== type) : [...current, type]);
@@ -107,6 +122,7 @@ export function CalendarPage() {
 
   return <>
     <PageHeader title="カレンダー" description="締切と開催日程を、月・週・日・年の表示で確認できます。" />
+    {calendarError && <div className="mb-4 rounded-2xl border border-red-200 bg-red-50 p-4 text-sm font-semibold text-red-800" role="alert">カレンダーを読み込めませんでした。{calendarError}</div>}
     <section className="calendar-app">
       <div className="calendar-commandbar">
         <button type="button" className="calendar-today-button" onClick={() => move('today')}>今日</button>

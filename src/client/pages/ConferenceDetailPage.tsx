@@ -15,7 +15,14 @@ export function ConferenceDetailPage() {
   const [actionError, setActionError] = useState('');
   const [notice, setNotice] = useState('');
   if (loading) return <Loading />; if (error || !data) return <ErrorState message={error ?? '学会が見つかりません。'} retry={reload} />;
-  async function archive() { if (!confirm(data!.is_archived ? 'アーカイブから復元しますか？' : 'この学会をアーカイブしますか？')) return; await api(`/api/conferences/${id}/${data!.is_archived ? 'restore' : 'archive'}`, { method: 'POST' }); if (data!.is_archived) reload(); else navigate('/conferences'); }
+  async function archive() {
+    if (!confirm(data!.is_archived ? 'アーカイブから復元しますか？' : 'この学会をアーカイブしますか？')) return;
+    setActionError(''); setNotice('');
+    try {
+      await api(`/api/conferences/${id}/${data!.is_archived ? 'restore' : 'archive'}`, { method: 'POST' });
+      if (data!.is_archived) { setNotice('アーカイブから復元しました。'); reload(); } else navigate('/conferences');
+    } catch (e) { setActionError(e instanceof Error ? e.message : '操作に失敗しました。'); }
+  }
   async function removeConference() {
     if (!confirm(`「${data!.acronym}」を本当に消去しますか？\n\nこの学会に紐づく開催回・締切・通知履歴もすべて消去され、元に戻せません。`)) return;
     setDeleting(true); setActionError('');

@@ -1,5 +1,6 @@
 import { Hono } from 'hono';
 import { editionSchema } from '../../shared/schemas';
+import { shiftIsoDateToYear } from '../../shared/date';
 import type { Env } from '../index';
 import { ApiError, errorResponse, nowSql, parseId, validationDetails } from '../lib/api';
 import { mapEdition } from '../lib/db';
@@ -14,10 +15,12 @@ editionRoutes.get('/', async (c) => {
     const year = c.req.query('year');
     const format = c.req.query('attendance_format');
     const status = c.req.query('information_status');
+    const query = (c.req.query('q') ?? '').trim();
+    if (query) { clauses.push('(c.name LIKE ? OR c.acronym LIKE ?)'); values.push(`%${query}%`, `%${query}%`); }
     if (year) { clauses.push('e.year=?'); values.push(Number(year)); }
     if (format) { clauses.push('e.attendance_format=?'); values.push(format); }
     if (status) { clauses.push('e.information_status=?'); values.push(status); }
-    if (c.req.query('include_past') !== 'true') clauses.push(`(e.end_date IS NULL OR e.end_date >= date('now') OR EXISTS (SELECT 1 FROM conference_deadlines x WHERE x.conference_edition_id=e.id AND x.deadline_at >= datetime('now')))`);
+    if (c.req.query('include_past') !== 'true') clauses.push(`(COALESCE(e.end_date,e.start_date,printf('%04d-12-31',e.year)) >= date('now') OR EXISTS (SELECT 1 FROM conference_deadlines x WHERE x.conference_edition_id=e.id AND x.deadline_at >= datetime('now')))`);
     const order = c.req.query('sort') === 'start_date' ? 'COALESCE(e.start_date,\'9999-12-31\')' : 'COALESCE(next_deadline,\'9999-12-31\')';
     const sql = `SELECT e.*, c.name conference_name, c.acronym, c.official_url conference_official_url, c.conference_type, c.fields,
       (SELECT MIN(d.deadline_at) FROM conference_deadlines d WHERE d.conference_edition_id=e.id AND d.deadline_at >= datetime('now')) next_deadline,
@@ -116,10 +119,10 @@ editionRoutes.post('/:id/duplicate-next-year', async (c) => {
     const insert = await c.env.DB.prepare(`INSERT INTO conference_editions(conference_id, year, country, city, attendance_format, timezone, information_status, notes, created_at, updated_at) VALUES(?,?,?,?,?,?,'未確認',?,?,?)`)
       .bind(source.conference_id, nextYear, source.country, source.city, source.attendance_format, source.timezone, source.notes, now, now).run();
     const newId = Number(insert.meta.last_row_id);
-    const deadlines = await c.env.DB.prepare('SELECT deadline_type, title, timezone, is_aoe, notification_enabled FROM conference_deadlines WHERE conference_edition_id=? ORDER BY deadline_at').bind(id).all<Record<string, unknown>>();
+    const deadlines = await c.env.DB.prepare('SELECT deadline_type, title, deadline_at, has_time, timezone, is_aoe, notification_enabled FROM conference_deadlines WHERE conference_edition_id=? ORDER BY deadline_at').bind(id).all<Record<string, unknown>>();
     for (const deadline of deadlines.results) {
-      await c.env.DB.prepare(`INSERT INTO conference_deadlines(conference_edition_id, deadline_type, title, deadline_at, has_time, timezone, is_aoe, information_status, notification_enabled, created_at, updated_at) VALUES(?,?,?,? ,0,?,?,'未確認',?,?,?)`)
-        .bind(newId, deadline.deadline_type, deadline.title, `${nextYear}-01-01`, deadline.timezone, deadline.is_aoe, deadline.notification_enabled, now, now).run();
+      await c.env.DB.prepare(`INSERT INTO conference_deadlines(conference_edition_id, deadline_type, title, deadline_at, has_time, timezone, is_aoe, information_status, notification_enabled, created_at, updated_at) VALUES(?,?,?,?,?,?,?,'未確認',?,?,?)`)
+        .bind(newId, deadline.deadline_type, deadline.title, shiftIsoDateToYear(String(deadline.deadline_at), nextYear), deadline.has_time, deadline.timezone, deadline.is_aoe, deadline.notification_enabled, now, now).run();
     }
     return c.json({ data: { ...mapEdition((await joinedEdition(c.env.DB, newId))!), deadlines_copied: deadlines.results.length } }, 201);
   } catch (error) { return errorResponse(c, error); }

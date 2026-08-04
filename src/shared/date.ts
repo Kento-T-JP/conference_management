@@ -33,3 +33,12 @@ export function shouldSendReminder(deadlineAt: string, now: Date, days: readonly
   const remaining = daysUntil(deadlineAt, now, isAoe, hasTime);
   return days.includes(remaining) ? remaining : null;
 }
+
+export function shiftIsoDateToYear(value: string, year: number): string {
+  const match = value.match(/^\d{4}-(\d{2})-(\d{2})(.*)$/);
+  if (!match) return value;
+  const month = Number(match[1]);
+  const day = Number(match[2]);
+  const lastDay = new Date(Date.UTC(year, month, 0)).getUTCDate();
+  return `${year}-${match[1]}-${String(Math.min(day, lastDay)).padStart(2, '0')}${match[3]}`;
+}

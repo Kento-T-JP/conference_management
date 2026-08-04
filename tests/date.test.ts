@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { daysUntil, deadlineInstant, deadlineLabel, expectedNextYear, shouldSendReminder } from '../src/shared/date';
+import { daysUntil, deadlineInstant, deadlineLabel, expectedNextYear, shiftIsoDateToYear, shouldSendReminder } from '../src/shared/date';
 
 describe('締切計算', () => {
   const now = new Date('2027-01-01T00:00:00Z');
@@ -25,5 +25,14 @@ describe('次年度未登録判定', () => {
     expect(expectedNextYear('毎年', 2027)).toBe(2028);
     expect(expectedNextYear('隔年', 2027)).toBe(2029);
     expect(expectedNextYear('不定期', 2027)).toBeNull();
+  });
+});
+
+describe('次年度への日付複製', () => {
+  it('月日と時刻を保ったまま年だけを更新する', () => {
+    expect(shiftIsoDateToYear('2028-11-15T23:59:00', 2029)).toBe('2029-11-15T23:59:00');
+  });
+  it('うるう日の翌年は2月末日に補正する', () => {
+    expect(shiftIsoDateToYear('2028-02-29', 2029)).toBe('2029-02-28');
   });
 });

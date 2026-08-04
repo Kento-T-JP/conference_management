@@ -72,9 +72,15 @@ export interface ApiErrorBody {
   error: { code: string; message: string; details?: Record<string, string> };
 }
 
+export interface DashboardDeadline extends ConferenceEdition {
+  deadline_id: number;
+  deadline_status: InformationStatus;
+  is_aoe: number;
+  has_time: number;
+}
+
 export interface DashboardData {
-  deadlines: ConferenceEdition[];
+  deadlines: DashboardDeadline[];
   upcoming_editions: ConferenceEdition[];
-  recently_updated: Conference[];
   missing_next_editions: Array<Conference & { expected_year: number }>;
 }
