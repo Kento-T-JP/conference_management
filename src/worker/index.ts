@@ -1,6 +1,7 @@
 import { Hono } from 'hono';
 import { cors } from 'hono/cors';
 import { runDailyReminders, runWeeklySummary } from './cron/notifications';
+import { getScheduledJob } from './cron/schedule';
 import { protectMutation, securityHeaders } from './middleware/security';
 import { conferenceRoutes } from './routes/conferences';
 import { deadlineRoutes } from './routes/deadlines';
@@ -42,7 +43,16 @@ app.route('/api/export', exportRoutes);
 export default {
   fetch: app.fetch,
   async scheduled(controller: ScheduledController, env: Env, ctx: ExecutionContext) {
-    ctx.waitUntil(runDailyReminders(env, new Date(controller.scheduledTime)));
-    if (controller.cron === '0 0 * * 1') ctx.waitUntil(runWeeklySummary(env, new Date(controller.scheduledTime)));
+    const scheduledAt = new Date(controller.scheduledTime);
+    const job = getScheduledJob(controller.cron);
+
+    if (job === 'daily-reminders') {
+      ctx.waitUntil(runDailyReminders(env, scheduledAt));
+      return;
+    }
+
+    if (job === 'weekly-summary') {
+      ctx.waitUntil(runWeeklySummary(env, scheduledAt));
+    }
   }
 };
