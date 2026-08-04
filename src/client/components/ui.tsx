@@ -6,7 +6,7 @@ import { ja } from 'date-fns/locale';
 import { deadlineLabel } from '../../shared/date';
 
 export function PageHeader({ eyebrow, title, description, action }: { eyebrow?: string; title: string; description?: string; action?: ReactNode }) {
-  return <div className="mb-7 flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between"><div>{eyebrow && <p className="mb-1 text-xs font-black uppercase tracking-[.18em] text-forest-700">{eyebrow}</p>}<h1 className="text-2xl font-black tracking-tight text-forest-950 sm:text-3xl">{title}</h1>{description && <p className="mt-2 max-w-2xl text-sm leading-6 text-slate-600">{description}</p>}</div>{action}</div>;
+  return <div className="page-header mb-8 flex flex-col gap-5 sm:flex-row sm:items-end sm:justify-between"><div>{eyebrow && <p className="section-kicker mb-2">{eyebrow}</p>}<h1 className="text-3xl font-black leading-[1.08] text-forest-950 sm:text-[2.7rem]">{title}</h1>{description && <p className="mt-3 max-w-2xl text-sm font-medium leading-7 text-slate-600">{description}</p>}</div>{action && <div className="shrink-0">{action}</div>}</div>;
 }
 
 export function StatusBadge({ value }: { value: string }) {
@@ -21,7 +21,7 @@ export function DeadlineBadge({ date, aoe, hasTime }: { date: string; aoe?: bool
 }
 
 export function EmptyState({ title, body, action }: { title: string; body: string; action?: ReactNode }) {
-  return <div className="surface px-6 py-12 text-center"><div className="mx-auto mb-4 grid size-11 place-items-center rounded-full bg-forest-50 text-xl text-forest-800">○</div><h2 className="font-black text-forest-950">{title}</h2><p className="mx-auto mt-2 max-w-md text-sm leading-6 text-slate-600">{body}</p>{action && <div className="mt-5">{action}</div>}</div>;
+  return <div className="surface px-6 py-14 text-center"><div className="mx-auto mb-5 grid size-12 place-items-center rounded-2xl border border-forest-900/10 bg-forest-50 text-xl text-forest-800 shadow-sm">＋</div><h2 className="text-lg font-black tracking-tight text-forest-950">{title}</h2><p className="mx-auto mt-2 max-w-md text-sm leading-7 text-slate-600">{body}</p>{action && <div className="mt-6">{action}</div>}</div>;
 }
 
 export function Loading() { return <div className="surface animate-pulse p-8 text-sm text-slate-500">情報を読み込んでいます…</div>; }
