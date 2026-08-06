@@ -226,7 +226,7 @@ a { color: inherit; }
 .fc .fc-scrollgrid { @apply overflow-hidden rounded-xl border-slate-200; }
 .fc .fc-col-header-cell { @apply bg-slate-50; }
 .fc .fc-col-header-cell-cushion { @apply py-3 text-xs font-black text-slate-500; }
-.fc .fc-daygrid-day-number { @apply m-1 grid size-7 place-items-center rounded-full text-xs font-bold; }
+.fc .fc-daygrid-day-number { @apply m-1 inline-flex h-7 min-w-8 shrink-0 items-center justify-center whitespace-nowrap rounded-full px-1 text-xs font-bold leading-none; }
 .fc .fc-day-today .fc-daygrid-day-number { @apply bg-[#e36f50] text-white; }
 .fc .fc-day-other .fc-daygrid-day-number { @apply text-slate-300; }
 .fc .fc-daygrid-day-frame { min-height: 7rem; }
@@ -249,7 +249,7 @@ a { color: inherit; }
 .fc .fc-multimonth-month { @apply overflow-hidden rounded-xl border border-slate-200; }
 .fc .fc-multimonth-title { @apply cursor-pointer bg-slate-50 py-3 text-sm font-black text-forest-950 transition hover:bg-forest-50; }
 .fc .fc-multimonth .fc-daygrid-day-frame { min-height: 2.2rem; }
-.fc .fc-multimonth .fc-daygrid-day-number { @apply m-0 size-6; }
+.fc .fc-multimonth .fc-daygrid-day-number { @apply m-0 h-6 min-w-7 px-0.5; }
 
 @media (max-width: 640px) {
   body::before { opacity: .14; }
