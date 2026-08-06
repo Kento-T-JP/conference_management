@@ -83,7 +83,6 @@ export interface DashboardDeadline extends ConferenceEdition {
 export interface DashboardData {
   deadlines: DashboardDeadline[];
   upcoming_editions: ConferenceEdition[];
-  missing_next_editions: Array<Conference & { expected_year: number }>;
 }
 
 export interface SlackSettingsData {

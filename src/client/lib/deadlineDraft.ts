@@ -1,3 +1,6 @@
+import { deadlineTypeLabel } from '../../shared/constants';
+import type { ConferenceDeadline } from '../../shared/types';
+
 export type DeadlineDraft = {
   deadline_type: string;
   title: string;
@@ -10,19 +13,7 @@ export type DeadlineDraft = {
   version?: number;
 };
 
-const labels: Record<string, string> = {
-  Abstract: '要旨',
-  'Full Paper': '論文',
-  'Short Paper': '短報',
-  Poster: 'ポスター',
-  Workshop: 'ワークショップ',
-  'Camera-ready': '最終稿',
-  'Author Notification': '採否通知',
-  Registration: '参加登録',
-  Other: 'その他'
-};
-
-export function deadlineName(type: string) { return labels[type] ?? type; }
+export function deadlineName(type: string) { return deadlineTypeLabel(type); }
 
 export function deadlineLabel(type: string) { return `${deadlineName(type)}${type === 'Other' ? '' : `（${type}）`}`; }
 
@@ -57,4 +48,3 @@ export function deadlinePayload(draft: DeadlineDraft) {
     version: draft.version
   };
 }
-import type { ConferenceDeadline } from '../../shared/types';

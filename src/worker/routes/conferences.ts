@@ -3,8 +3,10 @@ import { conferenceSchema } from '../../shared/schemas';
 import type { Env } from '../index';
 import { ApiError, errorResponse, nowSql, parseId, validationDetails } from '../lib/api';
 import { mapConference } from '../lib/db';
+import { ACTIONABLE_DEADLINE_TYPES } from '../../shared/constants';
 
 export const conferenceRoutes = new Hono<{ Bindings: Env }>();
+const ACTIONABLE_TYPE_SQL = ACTIONABLE_DEADLINE_TYPES.map((type) => `'${type.replaceAll("'", "''")}'`).join(',');
 
 conferenceRoutes.get('/', async (c) => {
   try {
@@ -24,11 +26,11 @@ conferenceRoutes.get('/', async (c) => {
     if (field) { clauses.push('c.fields LIKE ?'); values.push(`%${field}%`); }
     const sql = `SELECT c.*,
       (SELECT MAX(year) FROM conference_editions e WHERE e.conference_id=c.id AND e.is_archived=0) latest_year,
-      (SELECT MIN(d.deadline_at) FROM conference_deadlines d JOIN conference_editions e ON e.id=d.conference_edition_id WHERE e.conference_id=c.id AND e.is_archived=0 AND d.deadline_at >= datetime('now')) next_deadline,
+      (SELECT MIN(d.deadline_at) FROM conference_deadlines d JOIN conference_editions e ON e.id=d.conference_edition_id WHERE e.conference_id=c.id AND e.is_archived=0 AND d.deadline_type IN (${ACTIONABLE_TYPE_SQL}) AND d.deadline_at >= datetime('now')) next_deadline,
       (SELECT e.id FROM conference_editions e WHERE e.conference_id=c.id AND e.is_archived=0 ORDER BY
-        CASE WHEN EXISTS (SELECT 1 FROM conference_deadlines d WHERE d.conference_edition_id=e.id AND d.deadline_at >= datetime('now')) THEN 0
+        CASE WHEN EXISTS (SELECT 1 FROM conference_deadlines d WHERE d.conference_edition_id=e.id AND d.deadline_type IN (${ACTIONABLE_TYPE_SQL}) AND d.deadline_at >= datetime('now')) THEN 0
           WHEN COALESCE(e.end_date,e.start_date) >= date('now') THEN 1 ELSE 2 END,
-        COALESCE((SELECT MIN(d.deadline_at) FROM conference_deadlines d WHERE d.conference_edition_id=e.id AND d.deadline_at >= datetime('now')),'9999-12-31'), e.year DESC LIMIT 1) next_edition_id
+        COALESCE((SELECT MIN(d.deadline_at) FROM conference_deadlines d WHERE d.conference_edition_id=e.id AND d.deadline_type IN (${ACTIONABLE_TYPE_SQL}) AND d.deadline_at >= datetime('now')),'9999-12-31'), e.year DESC LIMIT 1) next_edition_id
       FROM conferences c WHERE ${clauses.join(' AND ')} ORDER BY c.updated_at DESC, c.acronym`;
     const result = await c.env.DB.prepare(sql).bind(...values).all<Record<string, unknown>>();
     return c.json({ data: result.results.map(mapConference) });
@@ -55,7 +57,7 @@ conferenceRoutes.get('/:id', async (c) => {
     const id = parseId(c.req.param('id'));
     const row = await c.env.DB.prepare('SELECT * FROM conferences WHERE id=?').bind(id).first<Record<string, unknown>>();
     if (!row) throw new ApiError(404, 'NOT_FOUND', '学会が見つかりません。');
-    const editions = await c.env.DB.prepare(`SELECT e.*, (SELECT MIN(deadline_at) FROM conference_deadlines d WHERE d.conference_edition_id=e.id AND d.deadline_at >= datetime('now')) next_deadline FROM conference_editions e WHERE conference_id=? ORDER BY year DESC, COALESCE(start_date,'9999-12-31'), COALESCE(edition_name,'')`).bind(id).all();
+    const editions = await c.env.DB.prepare(`SELECT e.*, (SELECT MIN(deadline_at) FROM conference_deadlines d WHERE d.conference_edition_id=e.id AND d.deadline_type IN (${ACTIONABLE_TYPE_SQL}) AND d.deadline_at >= datetime('now')) next_deadline FROM conference_editions e WHERE conference_id=? ORDER BY year DESC, COALESCE(start_date,'9999-12-31'), COALESCE(edition_name,'')`).bind(id).all();
     return c.json({ data: { ...mapConference(row), editions: editions.results } });
   } catch (error) { return errorResponse(c, error); }
 });

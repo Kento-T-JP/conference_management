@@ -29,12 +29,6 @@ export function deadlineLabel(deadlineAt: string, now = new Date(), isAoe = fals
   return `あと${days}日`;
 }
 
-export function expectedNextYear(frequency: string, lastYear: number): number | null {
-  if (frequency === '毎年') return lastYear + 1;
-  if (frequency === '隔年') return lastYear + 2;
-  return null;
-}
-
 export function shouldSendReminder(deadlineAt: string, now: Date, days: readonly number[], isAoe = false, hasTime = true, timeZone?: string | null): number | null {
   const remaining = daysUntil(deadlineAt, now, isAoe, hasTime, timeZone);
   return days.includes(remaining) ? remaining : null;

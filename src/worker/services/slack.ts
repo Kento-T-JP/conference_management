@@ -1,6 +1,7 @@
 import type { Env } from '../index';
 import { nowSql } from '../lib/api';
 import { editionDisplayName } from '../../shared/edition';
+import { deadlineTypeLabel, isActionableDeadlineType } from '../../shared/constants';
 
 interface NotificationOptions {
   type: string;
@@ -9,18 +10,6 @@ interface NotificationOptions {
   scheduledDate: string;
   text: string;
 }
-
-const DEADLINE_LABELS: Record<string, string> = {
-  Abstract: 'アブストラクト',
-  'Full Paper': '論文投稿',
-  'Short Paper': 'ショートペーパー',
-  Poster: 'ポスター',
-  Workshop: 'ワークショップ',
-  'Camera-ready': '最終原稿',
-  'Author Notification': '採否通知',
-  Registration: '参加登録',
-  Other: 'その他'
-};
 
 const WEEKDAYS = ['日', '月', '火', '水', '木', '金', '土'];
 
@@ -92,8 +81,9 @@ export function editionMessage(edition: Record<string, unknown>, baseUrl: string
 }
 
 export function deadlineChangedMessage(row: Record<string, unknown>, oldDeadline: string, baseUrl: string): string {
+  const actionable = isActionableDeadlineType(String(row.deadline_type));
   return [
-    '⏰ *締切が変更されました*',
+    actionable ? '⏰ *締切が変更されました*' : '📣 *予定日が変更されました*',
     `*${conferenceDeadlineTitle(row)}*`,
     `変更前：${formatDeadlineDate(oldDeadline, row)}`,
     `変更後：${formatDeadlineDate(row.deadline_at, row)}`,
@@ -102,10 +92,13 @@ export function deadlineChangedMessage(row: Record<string, unknown>, oldDeadline
 }
 
 export function reminderMessage(row: Record<string, unknown>, days: number, baseUrl: string): string {
+  const actionable = isActionableDeadlineType(String(row.deadline_type));
   return [
-    days === 1 ? '⏳ *締切は明日です*' : `⏳ *締切まであと${days}日*`,
+    actionable
+      ? (days === 1 ? '⏳ *締切は明日です*' : `⏳ *締切まであと${days}日*`)
+      : (days === 1 ? '📣 *予定は明日です*' : `📣 *予定まであと${days}日*`),
     `*${conferenceDeadlineTitle(row)}*`,
-    `締切：${formatDeadlineDate(row.deadline_at, row)}`,
+    `${actionable ? '締切' : '予定日'}：${formatDeadlineDate(row.deadline_at, row)}`,
     slackLink(`${baseUrl}/editions/${row.conference_edition_id}`, '開催回の詳細')
   ].join('\n');
 }
@@ -129,7 +122,7 @@ export function slackTestMessage(baseUrl: string): string {
 }
 
 function conferenceDeadlineTitle(row: Record<string, unknown>): string {
-  const base = DEADLINE_LABELS[String(row.deadline_type)] || String(row.deadline_type || '締切');
+  const base = deadlineTypeLabel(String(row.deadline_type || '締切'));
   const custom = String(row.title || '').trim();
   const label = custom && custom !== base ? `${base}（${custom}）` : base;
   return `${escapeSlackText(recordEditionName(row))} — ${escapeSlackText(label)}`;

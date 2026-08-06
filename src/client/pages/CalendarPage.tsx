@@ -120,7 +120,7 @@ export function CalendarPage() {
   }
 
   return <>
-    <PageHeader title="カレンダー" description="締切と開催日程を、月・年の表示で確認できます。" />
+    <PageHeader title="カレンダー" description="締切・予定と開催日程を、月・年の表示で確認できます。" />
     {calendarError && <div className="mb-4 rounded-2xl border border-red-200 bg-red-50 p-4 text-sm font-semibold text-red-800" role="alert">カレンダーを読み込めませんでした。{calendarError}</div>}
     <section className="calendar-app">
       <div className="calendar-commandbar">
@@ -130,7 +130,7 @@ export function CalendarPage() {
           <button type="button" onClick={() => move('next')} aria-label="次の期間">›</button>
         </div>
         <div className="calendar-title"><h2>{calendarTitle}</h2><span>JST</span></div>
-        <label className="calendar-search"><span className="sr-only">予定を検索</span><span aria-hidden="true">⌕</span><input value={search} onChange={(event) => setSearch(event.target.value)} placeholder="学会名・締切を検索" /></label>
+        <label className="calendar-search"><span className="sr-only">予定を検索</span><span aria-hidden="true">⌕</span><input value={search} onChange={(event) => setSearch(event.target.value)} placeholder="学会名・予定を検索" /></label>
         <label className="calendar-view-select"><span className="sr-only">表示形式</span><select value={view} onChange={(event) => changeView(event.target.value)}>{viewOptions.map((option) => <option key={option.value} value={option.value}>{option.label}</option>)}</select></label>
       </div>
 
@@ -188,7 +188,7 @@ function EventDetail({ event, onOpen }: { event: CalendarEvent; onOpen: () => vo
 }
 
 function DayDetail({ date, events, onSelect }: { date: string; events: CalendarEvent[]; onSelect: (event: CalendarEvent) => void }) {
-  return <><p className="section-kicker">Daily schedule</p><h2 className="mt-2 pr-10 text-2xl font-black text-forest-950">{formatDayHeading(date)}</h2>{events.length ? <div className="mt-6 space-y-2">{events.map((event) => <button key={event.id} type="button" className="calendar-day-event" onClick={() => onSelect(event)}><span className={`calendar-legend-dot calendar-legend-dot--${event.extendedProps.kind}`} /><span><strong>{cleanEventTitle(event.title)}</strong><small>{formatCalendarDate(event.start, event.allDay)}</small></span><b>›</b></button>)}</div> : <div className="mt-8 rounded-2xl border border-dashed border-slate-300 p-7 text-center"><p className="font-black text-forest-950">予定はありません</p><p className="mt-2 text-sm leading-6 text-slate-500">開催回を選ぶと、この日の締切を追加できます。</p></div>}<Link className="btn-secondary mt-6 w-full" to="/editions">開催回から締切を追加</Link></>;
+  return <><p className="section-kicker">Daily schedule</p><h2 className="mt-2 pr-10 text-2xl font-black text-forest-950">{formatDayHeading(date)}</h2>{events.length ? <div className="mt-6 space-y-2">{events.map((event) => <button key={event.id} type="button" className="calendar-day-event" onClick={() => onSelect(event)}><span className={`calendar-legend-dot calendar-legend-dot--${event.extendedProps.kind}`} /><span><strong>{cleanEventTitle(event.title)}</strong><small>{formatCalendarDate(event.start, event.allDay)}</small></span><b>›</b></button>)}</div> : <div className="mt-8 rounded-2xl border border-dashed border-slate-300 p-7 text-center"><p className="font-black text-forest-950">予定はありません</p><p className="mt-2 text-sm leading-6 text-slate-500">開催回を選ぶと、この日の締切・予定を追加できます。</p></div>}<Link className="btn-secondary mt-6 w-full" to="/editions">開催回から締切・予定を追加</Link></>;
 }
 
 function occursOn(event: CalendarEvent, date: string) {

@@ -17,6 +17,10 @@ describe('入力バリデーション', () => {
     expect(deadlineSchema.safeParse({ deadline_type: 'Full Paper', deadline_at: '2027-01-01', information_status: '予測' }).success).toBe(false);
   });
   it('不正なenum値を拒否する', () => expect(deadlineSchema.safeParse({ deadline_type: 'Unknown', deadline_at: '2027-01-01' }).success).toBe(false));
+  it('その他の予定には表示名を必須とする', () => {
+    expect(deadlineSchema.safeParse({ deadline_type: 'Other', deadline_at: '2027-01-01' }).success).toBe(false);
+    expect(deadlineSchema.safeParse({ deadline_type: 'Other', title: '発表申込締切', deadline_at: '2027-01-01' }).success).toBe(true);
+  });
   it('AoE締切を受け付ける', () => expect(deadlineSchema.safeParse({ deadline_type: 'Full Paper', deadline_at: '2027-01-01', is_aoe: true, timezone: 'AoE' }).success).toBe(true));
   it('時刻付き締切には正しいタイムゾーンを要求する', () => {
     expect(deadlineSchema.safeParse({ deadline_type: 'Full Paper', deadline_at: '2027-01-01T23:59', has_time: true }).success).toBe(false);

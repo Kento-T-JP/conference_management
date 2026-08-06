@@ -62,9 +62,9 @@ export function SettingsPage() {
       </section>
 
       <form className="surface p-5 sm:p-7" onSubmit={save}>
-        <p className="section-kicker">Notifications</p><h2 className="mt-3 text-xl font-black text-forest-950">通知タイミング</h2><p className="mt-3 text-sm leading-7 text-slate-600">「Slack通知」が有効な締切について、選択した日数前に通知します。</p>
-        <fieldset className="mt-6"><legend className="label">締切の何日前に通知するか</legend><div className="grid grid-cols-2 gap-2 sm:grid-cols-5">{REMINDER_OPTIONS.map((day) => <label key={day} className="deadline-type-choice justify-center"><input type="checkbox" checked={reminderDays.includes(day)} onChange={() => toggleDay(day)} /><strong>{day}日前</strong></label>)}</div><p className="field-hint">すべて外すと、締切前の自動通知を停止します。</p></fieldset>
-        <label className="mt-6 flex cursor-pointer items-start gap-3 rounded-2xl border border-slate-200 bg-white/70 p-4 transition hover:border-forest-700/40"><input type="checkbox" className="mt-1 size-4 accent-[#2c6652]" checked={weeklyEnabled} onChange={(event) => setWeeklyEnabled(event.target.checked)} /><span><strong className="block text-sm font-black text-forest-950">週次まとめを送る</strong><small className="mt-1 block text-xs leading-5 text-slate-500">今後90日以内の締切と最近追加された開催回を週1回まとめます。</small></span></label>
+        <p className="section-kicker">Notifications</p><h2 className="mt-3 text-xl font-black text-forest-950">通知タイミング</h2><p className="mt-3 text-sm leading-7 text-slate-600">「Slack通知」が有効な締切・予定について、選択した日数前に通知します。</p>
+        <fieldset className="mt-6"><legend className="label">予定日の何日前に通知するか</legend><div className="grid grid-cols-2 gap-2 sm:grid-cols-5">{REMINDER_OPTIONS.map((day) => <label key={day} className="deadline-type-choice justify-center"><input type="checkbox" checked={reminderDays.includes(day)} onChange={() => toggleDay(day)} /><strong>{day}日前</strong></label>)}</div><p className="field-hint">すべて外すと、日次の自動通知を停止します。</p></fieldset>
+        <label className="mt-6 flex cursor-pointer items-start gap-3 rounded-2xl border border-slate-200 bg-white/70 p-4 transition hover:border-forest-700/40"><input type="checkbox" className="mt-1 size-4 accent-[#2c6652]" checked={weeklyEnabled} onChange={(event) => setWeeklyEnabled(event.target.checked)} /><span><strong className="block text-sm font-black text-forest-950">週次まとめを送る</strong><small className="mt-1 block text-xs leading-5 text-slate-500">今後90日以内の操作が必要な締切と、最近追加された開催回を週1回まとめます。</small></span></label>
         <div className="mt-7 flex justify-end"><button className="btn-primary" disabled={saving}>{saving ? '保存中…' : '通知設定を保存'}</button></div>
       </form>
     </div>
@@ -80,4 +80,4 @@ export function SettingsPage() {
 
 function Info({ label, value }: { label: string; value: string }) { return <div><dt className="text-xs font-bold text-slate-400">{label}</dt><dd className="mt-1 font-semibold leading-6 text-slate-700">{value}</dd></div>; }
 function deliveryStatus(status: string) { return ({ sent: '送信成功', failed: '送信失敗', skipped: 'スキップ', pending: '送信待ち' } as Record<string, string>)[status] ?? status; }
-function notificationLabel(type: string) { return type === 'slack_test' ? 'テスト通知' : type === 'weekly_summary' ? '週次まとめ' : type.startsWith('deadline_reminder_') ? '締切リマインド' : type === 'deadline_changed' ? '締切変更' : type === 'new_edition' ? '新しい開催回' : type; }
+function notificationLabel(type: string) { return type === 'slack_test' ? 'テスト通知' : type === 'weekly_summary' ? '週次まとめ' : type.startsWith('deadline_reminder_') ? '予定リマインド' : type === 'deadline_changed' ? '予定日変更' : type === 'new_edition' ? '新しい開催回' : type; }

@@ -83,14 +83,21 @@ describe('Slack通知', () => {
     const row = { acronym: 'MSS', year: 2026, edition_name: '11月研究会', conference_type: '研究会', conference_edition_id: 8, deadline_type: 'Other', title: '発表申込', deadline_at: '2026-09-04', has_time: 0, is_aoe: 0 };
     expect(reminderMessage(row, 7, 'https://conference.example.com')).toContain('*MSS 2026年11月研究会 — その他（発表申込）*');
   });
+  it('採否通知は締切ではなく予定として通知する', () => {
+    const row = { acronym: 'IEEE CVPR', year: 2027, conference_edition_id: 3, deadline_type: 'Author Notification', deadline_at: '2027-01-20', has_time: 0, is_aoe: 0 };
+    const text = reminderMessage(row, 1, 'https://conference.example.com');
+    expect(text).toContain('📣 *予定は明日です*');
+    expect(text).toContain('予定日：');
+    expect(text).not.toContain('締切：');
+  });
   it('週次まとめとテスト通知をSlackリンク形式にする', () => {
     const weekly = weeklySummaryMessage(
-      [{ acronym: 'IEEE CVPR', year: 2027, deadline_type: 'Author Notification', deadline_at: '2027-01-20', has_time: 0, is_aoe: 0 }],
+      [{ acronym: 'IEEE CVPR', year: 2027, deadline_type: 'Full Paper', deadline_at: '2027-01-20', has_time: 0, is_aoe: 0 }],
       [{ id: 3, acronym: 'IEEE CVPR', year: 2027 }],
       'https://conference.example.com'
     );
     expect(weekly).toContain('*90日以内の締切*');
-    expect(weekly).toContain('IEEE CVPR 2027 — 採否通知');
+    expect(weekly).toContain('IEEE CVPR 2027 — 論文投稿');
     expect(weekly).toContain('<https://conference.example.com/editions/3|IEEE CVPR 2027>');
     expect(slackTestMessage('https://conference.example.com')).toContain('<https://conference.example.com/|学会管理を開く>');
   });

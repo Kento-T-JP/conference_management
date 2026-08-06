@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { daysUntil, deadlineInstant, deadlineLabel, expectedNextYear, shiftIsoDateToYear, shouldSendReminder } from '../src/shared/date';
+import { daysUntil, deadlineInstant, deadlineLabel, shiftIsoDateToYear, shouldSendReminder } from '../src/shared/date';
 import { dateKeyInTimeZone, isValidTimeZone, zonedLocalDateTimeToIso } from '../src/shared/timezone';
 
 describe('締切計算', () => {
@@ -39,14 +39,6 @@ describe('タイムゾーン変換', () => {
   it('IANAタイムゾーンを検証する', () => {
     expect(isValidTimeZone('Asia/Tokyo')).toBe(true);
     expect(isValidTimeZone('UTC+9')).toBe(false);
-  });
-});
-
-describe('次年度未登録判定', () => {
-  it('毎年と隔年の次回年を返す', () => {
-    expect(expectedNextYear('毎年', 2027)).toBe(2028);
-    expect(expectedNextYear('隔年', 2027)).toBe(2029);
-    expect(expectedNextYear('不定期', 2027)).toBeNull();
   });
 });
 

@@ -25,14 +25,14 @@ export function ConferenceDetailPage() {
     } catch (e) { setActionError(e instanceof Error ? e.message : '操作に失敗しました。'); }
   }
   async function removeConference() {
-    if (!confirm(`「${data!.acronym}」を本当に消去しますか？\n\nこの学会に紐づく開催回・締切・通知履歴もすべて消去され、元に戻せません。`)) return;
+    if (!confirm(`「${data!.acronym}」を本当に消去しますか？\n\nこの学会に紐づく開催回・締切・予定・通知履歴もすべて消去され、元に戻せません。`)) return;
     setDeleting(true); setActionError('');
     try { await api(`/api/conferences/${id}`, { method: 'DELETE' }); navigate('/conferences'); }
     catch (e) { setActionError(e instanceof Error ? e.message : '消去に失敗しました。'); setDeleting(false); }
   }
   async function removeEdition(edition: ConferenceEdition) {
     const name = editionDisplayName({ ...edition, acronym: data!.acronym, conference_type: data!.conference_type });
-    if (!confirm(`「${name}」を本当に消去しますか？\n\nこの開催回に紐づく締切と通知履歴も消去され、元に戻せません。学会自体は残ります。`)) return;
+    if (!confirm(`「${name}」を本当に消去しますか？\n\nこの開催回に紐づく締切・予定と通知履歴も消去され、元に戻せません。学会自体は残ります。`)) return;
     setBusyEdition(edition.id); setActionError(''); setNotice('');
     try {
       await api(`/api/editions/${edition.id}`, { method: 'DELETE' });
@@ -46,7 +46,7 @@ export function ConferenceDetailPage() {
     {actionError && <div className="mb-5 rounded-xl border border-red-200 bg-red-50 p-4 text-sm font-semibold text-red-800">{actionError}</div>}
     {notice && <div className="mb-5 rounded-xl border border-emerald-200 bg-emerald-50 p-4 text-sm font-semibold text-emerald-900">{notice}</div>}
     <div className="grid gap-6 lg:grid-cols-[1fr_2fr]">
-      <aside className="surface h-fit p-5"><h2 className="text-sm font-black text-slate-400">基本情報</h2><dl className="mt-4 space-y-4 text-sm"><Info label="学会種別" value={data.conference_type} /><Info label="開催頻度" value={data.frequency} /><Info label="分野" value={data.fields.join(' · ') || '未設定'} /><Info label="キーワード" value={data.keywords.join(' · ') || '未設定'} /><Info label="備考" value={data.notes || 'なし'} /></dl><a className="btn-secondary mt-5 w-full" href={data.official_url} target="_blank" rel="noopener noreferrer">公式サイトを開く ↗</a><button className="mt-3 w-full text-sm font-bold text-slate-500 hover:text-forest-800" onClick={archive}>{data.is_archived ? 'アーカイブから復元' : '一覧からアーカイブ'}</button></aside>
+      <aside className="surface h-fit p-5"><h2 className="text-sm font-black text-slate-400">基本情報</h2><dl className="mt-4 space-y-4 text-sm"><Info label="学会種別" value={data.conference_type} /><Info label="開催サイクル" value={data.frequency} /><Info label="分野" value={data.fields.join(' · ') || '未設定'} /><Info label="キーワード" value={data.keywords.join(' · ') || '未設定'} /><Info label="備考" value={data.notes || 'なし'} /></dl><a className="btn-secondary mt-5 w-full" href={data.official_url} target="_blank" rel="noopener noreferrer">公式サイトを開く ↗</a><button className="mt-3 w-full text-sm font-bold text-slate-500 hover:text-forest-800" onClick={archive}>{data.is_archived ? 'アーカイブから復元' : '一覧からアーカイブ'}</button></aside>
       <section><div className="mb-3 flex items-center justify-between"><h2 className="text-xl font-black text-forest-950">開催回</h2><span className="text-sm text-slate-500">{data.editions.length}件</span></div>
         {!data.editions.length ? <EmptyState title="開催回が未登録です" body="開催情報を追加してください。日程が未定でも登録できます。" action={<Link className="btn-primary" to={`/conferences/${id}/editions/new`}>開催回を追加</Link>} /> : <div className="space-y-7">{grouped.map(([year, editions]) => <section key={year}><div className="mb-2 flex items-center gap-3"><h3 className="text-sm font-black text-slate-500">{year}年</h3><span className="h-px flex-1 bg-slate-200" /></div><div className="space-y-3">{editions!.map((edition) => <article key={edition.id} className="surface group overflow-hidden transition hover:border-forest-700/30">
           <Link to={`/editions/${edition.id}`} className="block p-5 outline-none transition hover:bg-forest-50/70 focus-visible:bg-forest-50/70" aria-label={`${editionCardTitle(edition)}の詳細を見る`}>

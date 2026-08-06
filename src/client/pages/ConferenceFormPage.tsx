@@ -40,7 +40,7 @@ export function ConferenceFormPage() {
     {!id && <div className="mx-auto max-w-3xl"><SetupProgress current={1} /></div>}
     <form onSubmit={submit} className="mx-auto max-w-3xl space-y-5">
       {message && <div className="rounded-xl border border-amber-200 bg-amber-50 p-4 text-sm text-amber-900">{message}</div>}
-      {!id && <div className="rounded-[1.35rem] border border-forest-700/15 bg-forest-50/80 p-4 text-sm leading-6 text-forest-900"><strong className="font-black">この画面で入力するもの</strong><p className="mt-1 text-forest-900/70">学会の名称・公式サイト・分野などの共通情報です。開催年、開催地、開催日程、締切は次の画面でまとめて入力します。</p></div>}
+      {!id && <div className="rounded-[1.35rem] border border-forest-700/15 bg-forest-50/80 p-4 text-sm leading-6 text-forest-900"><strong className="font-black">この画面で入力するもの</strong><p className="mt-1 text-forest-900/70">学会の名称・公式サイト・分野などの共通情報です。開催年、開催地、開催日程、締切・予定は次の画面でまとめて入力します。</p></div>}
       <fieldset className="surface p-5 sm:p-7"><FormLegend number="01" title="基本情報" description="公式サイトを見ながら、学会を識別するための情報を入力します。" /><div className="grid gap-5 sm:grid-cols-3">
         <label className="sm:col-span-2"><span className="label">正式名称 <Required /></span><input className="field" placeholder="IEEE/CVF Conference on Computer Vision and Pattern Recognition" value={form.name} onChange={(e) => update('name', e.target.value)} maxLength={200} required /><FieldHint>公式サイトに記載されている学会名を入力します。</FieldHint><FieldError value={errors.name} /></label>
         <label><span className="label">略称 <Required /></span><input className="field" placeholder="例：IEEE/CVF CVPR" value={form.acronym} onChange={(e) => update('acronym', e.target.value)} maxLength={40} required /><FieldHint>一覧や通知で表示する短い名称です。</FieldHint><FieldError value={errors.acronym} /></label>
@@ -48,12 +48,12 @@ export function ConferenceFormPage() {
       </div></fieldset>
       <fieldset className="surface p-5 sm:p-7"><FormLegend number="02" title="分類と探しやすさ" description="一覧の整理や検索に使う情報です。" /><div className="grid gap-5 sm:grid-cols-2">
         <label><span className="label">学会種別 <Required /></span><select className="field" value={form.conference_type} onChange={(e) => update('conference_type', e.target.value)}>{CONFERENCE_TYPES.map((v) => <option key={v}>{v}</option>)}</select><FieldHint>国際会議、国内学会などの区分です。</FieldHint></label>
-        <label><span className="label">開催頻度 <Required /></span><select className="field" value={form.frequency} onChange={(e) => update('frequency', e.target.value)}>{FREQUENCIES.map((v) => <option key={v}>{v}</option>)}</select><FieldHint>次年度情報の登録漏れを見つけるために使います。</FieldHint></label>
+        <label><span className="label">開催サイクル <Required /></span><select className="field" value={form.frequency} onChange={(e) => update('frequency', e.target.value)}>{FREQUENCIES.map((v) => <option key={v}>{v}</option>)}</select><FieldHint>開催の繰り返し方を選択します。補足：同じ年に複数回開催する場合も「毎年」を選択してください。各回は開催回として個別に登録できます。</FieldHint></label>
         <label><span className="label">研究分野 <Optional /></span><input className="field" placeholder="数理最適化, 機械学習" value={form.fields} onChange={(e) => update('fields', e.target.value)} /><FieldHint>複数ある場合はカンマで区切ります。</FieldHint></label>
         <label><span className="label">検索キーワード <Optional /></span><input className="field" placeholder="グラフ理論, 通信, 組合せ最適化" value={form.keywords} onChange={(e) => update('keywords', e.target.value)} /><FieldHint>正式名称や略称以外で検索したい言葉を入力します。</FieldHint></label>
       </div></fieldset>
       <fieldset className="surface p-5 sm:p-7"><FormLegend number="03" title="補足" description="年度によらず、この学会に共通する注意事項があれば記録します。" /><label><span className="label">備考 <Optional /></span><textarea className="field min-h-28" placeholder="例：本会議に加えてワークショップ日程あり" maxLength={1000} value={form.notes} onChange={(e) => update('notes', e.target.value)} /><FieldHint>開催回ごとの情報は次の画面の備考へ入力してください。</FieldHint></label></fieldset>
-      <div className="flex justify-end gap-3"><Link to={id ? `/conferences/${id}` : '/conferences'} className="btn-secondary">キャンセル</Link><button className="btn-primary" disabled={saving}>{saving ? '保存中…' : id ? '保存する' : '次へ：開催回と締切を入力'}</button></div>
+      <div className="flex justify-end gap-3"><Link to={id ? `/conferences/${id}` : '/conferences'} className="btn-secondary">キャンセル</Link><button className="btn-primary" disabled={saving}>{saving ? '保存中…' : id ? '保存する' : '次へ：開催回と締切・予定を入力'}</button></div>
     </form></>;
 }
 

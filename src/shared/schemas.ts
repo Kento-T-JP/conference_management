@@ -50,13 +50,16 @@ export const deadlineSchema = z.object({
   notification_enabled: z.boolean().default(true),
   version: z.number().int().positive().optional()
 }).superRefine((data, ctx) => {
+  if (data.deadline_type === 'Other' && !data.title?.trim()) {
+    ctx.addIssue({ code: 'custom', path: ['title'], message: '「その他」の予定名を入力してください。' });
+  }
   if (!data.has_time || data.is_aoe || !data.deadline_at.includes('T')) return;
   if (!data.timezone) ctx.addIssue({ code: 'custom', path: ['timezone'], message: '時刻を入力した場合はタイムゾーンも指定してください。' });
   else if (!isValidTimeZone(data.timezone)) ctx.addIssue({ code: 'custom', path: ['timezone'], message: 'IANA形式のタイムゾーンを入力してください。' });
 });
 
 export const deadlineBatchSchema = z.object({
-  deadlines: z.array(deadlineSchema).min(1, '締切を1件以上入力してください。').max(20, '一度に登録できる締切は20件までです。')
+  deadlines: z.array(deadlineSchema).min(1, '締切・予定を1件以上入力してください。').max(20, '一度に登録できる締切・予定は20件までです。')
 });
 
 export type ConferenceInput = z.infer<typeof conferenceSchema>;

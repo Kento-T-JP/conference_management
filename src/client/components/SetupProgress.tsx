@@ -1,4 +1,4 @@
-const steps = ['学会', '開催回と締切'];
+const steps = ['学会', '開催回と締切・予定'];
 
 export function SetupProgress({ current }: { current: 1 | 2 }) {
   return <ol className="mb-7 grid grid-cols-2 overflow-hidden rounded-[1.35rem] border border-white/80 bg-white/70 p-1.5 shadow-[0_16px_40px_-32px_rgba(16,39,31,.5)] backdrop-blur-sm" aria-label="登録手順">
