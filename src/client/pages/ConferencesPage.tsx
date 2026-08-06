@@ -11,7 +11,7 @@ export function ConferencesPage() {
   const path = `/api/conferences${queryString(filters)}`;
   const { data, loading, error, reload } = useApi<Conference[]>(path);
   return <>
-    <PageHeader title="学会" description="学会を探し、詳細画面から編集・消去・年度別情報を管理します。" action={<Link to="/conferences/new" className="btn-primary">＋ 学会を追加</Link>} />
+    <PageHeader title="学会" description="学会を探し、詳細画面から基本情報と開催回を管理します。" action={<Link to="/conferences/new" className="btn-primary">＋ 学会を追加</Link>} />
     <div className="surface mb-5 grid gap-3 p-4 sm:grid-cols-2 lg:grid-cols-4">
       <label><span className="label">キーワード</span><input className="field" type="search" placeholder="名称・略称・分野" value={filters.q} onChange={(e) => setFilters({ ...filters, q: e.target.value })} /></label>
       <label><span className="label">学会種別</span><select className="field" value={filters.conference_type} onChange={(e) => setFilters({ ...filters, conference_type: e.target.value })}><option value="">すべて</option>{CONFERENCE_TYPES.map((v) => <option key={v}>{v}</option>)}</select></label>

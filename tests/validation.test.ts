@@ -7,6 +7,10 @@ describe('入力バリデーション', () => {
     expect(conferenceSchema.safeParse({ name: '<script>alert(1)</script>', acronym: 'EC', official_url: 'invalid', conference_type: '国際会議', frequency: '毎年' }).success).toBe(false);
   });
   it('開催終了日が開始日より前なら拒否する', () => expect(editionSchema.safeParse({ year: 2027, start_date: '2027-10-10', end_date: '2027-10-09' }).success).toBe(false));
+  it('開催回名は任意で120文字まで受け付ける', () => {
+    expect(editionSchema.safeParse({ year: 2027, edition_name: '11月研究会' }).success).toBe(true);
+    expect(editionSchema.safeParse({ year: 2027, edition_name: 'a'.repeat(121) }).success).toBe(false);
+  });
   it('情報状態は公式または未確認だけを受け付ける', () => {
     expect(editionSchema.safeParse({ year: 2027, information_status: '公式' }).success).toBe(true);
     expect(editionSchema.safeParse({ year: 2027, information_status: '仮' }).success).toBe(false);

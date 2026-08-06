@@ -36,7 +36,7 @@ describe('API', () => {
     expect(deleted[3]).toContain('DELETE FROM conferences');
   });
 
-  it('年度別開催情報と関連締切を完全消去できる', async () => {
+  it('開催回と関連締切を完全消去できる', async () => {
     const deleted: string[] = [];
     const db = {
       prepare(query: string) {
@@ -61,24 +61,26 @@ describe('API', () => {
     expect(deleted[2]).toContain('DELETE FROM conference_editions');
   });
 
-  it('次年度の開催回が存在する場合は複製しない', async () => {
+  it('同じ開催日の明らかな重複は登録しない', async () => {
     const db = {
       prepare(query: string) {
         return {
           bind() { return this; },
           async first() {
-            if (query.includes('SELECT * FROM conference_editions')) return { id: 31, conference_id: 12, year: 2028 };
-            if (query.includes('SELECT id FROM conference_editions')) return { id: 32 };
+            if (query.includes('SELECT id FROM conferences')) return { id: 12 };
             return null;
-          }
+          },
+          async all() { return { results: [{ id: 31, edition_name: '6月研究会', start_date: '2028-06-11', official_url: null }] }; }
         };
       }
     } as unknown as D1Database;
     const env = { APP_BASE_URL: 'http://localhost:5173', ENVIRONMENT: 'test', DB: db } satisfies Env;
     const ctx = { waitUntil() {}, passThroughOnException() {}, props: {} } as unknown as ExecutionContext;
-    const response = await worker.fetch(new Request('http://localhost/api/editions/31/duplicate-next-year', { method: 'POST' }), env, ctx);
+    const response = await worker.fetch(new Request('http://localhost/api/editions/conference/12', {
+      method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ year: 2028, edition_name: '別名', start_date: '2028-06-11' })
+    }), env, ctx);
     expect(response.status).toBe(409);
-    expect(await response.json()).toEqual({ error: { code: 'DUPLICATE_EDITION', message: '次年度の開催回は既に存在します。' } });
+    expect(await response.json()).toEqual({ error: { code: 'DUPLICATE_EDITION', message: '同じ開催回と思われる情報が既に登録されています。既存の開催回を編集してください。' } });
   });
 
   it('Webhook未設定時はSlackテスト通知を拒否する', async () => {

@@ -79,6 +79,10 @@ describe('Slack通知', () => {
     expect(reminderMessage(row, 1, 'https://conference.example.com')).toContain('⏳ *締切は明日です*');
     expect(reminderMessage(row, 7, 'https://conference.example.com')).toContain('*IEEE CVPR 2027 — 論文投稿*');
   });
+  it('同一年に複数ある研究会は開催回名を通知に含める', () => {
+    const row = { acronym: 'MSS', year: 2026, edition_name: '11月研究会', conference_type: '研究会', conference_edition_id: 8, deadline_type: 'Other', title: '発表申込', deadline_at: '2026-09-04', has_time: 0, is_aoe: 0 };
+    expect(reminderMessage(row, 7, 'https://conference.example.com')).toContain('*MSS 2026年11月研究会 — その他（発表申込）*');
+  });
   it('週次まとめとテスト通知をSlackリンク形式にする', () => {
     const weekly = weeklySummaryMessage(
       [{ acronym: 'IEEE CVPR', year: 2027, deadline_type: 'Author Notification', deadline_at: '2027-01-20', has_time: 0, is_aoe: 0 }],

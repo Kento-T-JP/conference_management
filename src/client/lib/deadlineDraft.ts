@@ -30,6 +30,20 @@ export function createDeadlineDraft(deadlineType = 'Full Paper'): DeadlineDraft 
   return { deadline_type: deadlineType, title: '', date: '', time: '', timezone: '', is_aoe: false, information_status: '未確認', notification_enabled: true };
 }
 
+export function deadlineToDraft(deadline: ConferenceDeadline): DeadlineDraft {
+  return {
+    deadline_type: deadline.deadline_type,
+    title: deadline.title ?? '',
+    date: deadline.deadline_at.slice(0, 10),
+    time: deadline.has_time ? deadline.deadline_at.slice(11, 16) : '',
+    timezone: deadline.is_aoe ? 'AoE' : deadline.timezone ?? '',
+    is_aoe: Boolean(deadline.is_aoe),
+    information_status: deadline.information_status,
+    notification_enabled: Boolean(deadline.notification_enabled),
+    version: deadline.version
+  };
+}
+
 export function deadlinePayload(draft: DeadlineDraft) {
   return {
     deadline_type: draft.deadline_type,
@@ -43,3 +57,4 @@ export function deadlinePayload(draft: DeadlineDraft) {
     version: draft.version
   };
 }
+import type { ConferenceDeadline } from '../../shared/types';

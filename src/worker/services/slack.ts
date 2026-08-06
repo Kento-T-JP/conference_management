@@ -1,5 +1,6 @@
 import type { Env } from '../index';
 import { nowSql } from '../lib/api';
+import { editionDisplayName } from '../../shared/edition';
 
 interface NotificationOptions {
   type: string;
@@ -81,7 +82,7 @@ export function editionMessage(edition: Record<string, unknown>, baseUrl: string
   const official = slackLink(edition.official_url || edition.conference_official_url, '公式サイト');
   return [
     '📌 *新しい開催回を登録しました*',
-    `*${escapeSlackText(edition.acronym)} ${escapeSlackText(edition.year)}*`,
+    `*${escapeSlackText(recordEditionName(edition))}*`,
     `開催日：${dates}`,
     `開催地：${escapeSlackText(place)}`,
     `開催形式：${escapeSlackText(edition.attendance_format || '未定')}`,
@@ -116,7 +117,7 @@ export function weeklySummaryMessage(deadlines: Record<string, unknown>[], recen
     sections.push(`*90日以内の締切*\n${lines.join('\n')}`);
   }
   if (recent.length) {
-    const lines = recent.map((row) => `• ${slackLink(`${baseUrl}/editions/${row.edition_id || row.id}`, `${row.acronym} ${row.year}`)}`);
+    const lines = recent.map((row) => `• ${slackLink(`${baseUrl}/editions/${row.edition_id || row.id}`, recordEditionName(row))}`);
     sections.push(`*最近追加された開催回*\n${lines.join('\n')}`);
   }
   sections.push(slackLink(baseUrl, '学会管理を開く'));
@@ -131,7 +132,17 @@ function conferenceDeadlineTitle(row: Record<string, unknown>): string {
   const base = DEADLINE_LABELS[String(row.deadline_type)] || String(row.deadline_type || '締切');
   const custom = String(row.title || '').trim();
   const label = custom && custom !== base ? `${base}（${custom}）` : base;
-  return `${escapeSlackText(row.acronym)} ${escapeSlackText(row.year)} — ${escapeSlackText(label)}`;
+  return `${escapeSlackText(recordEditionName(row))} — ${escapeSlackText(label)}`;
+}
+
+function recordEditionName(row: Record<string, unknown>): string {
+  return editionDisplayName({
+    acronym: String(row.acronym || ''),
+    year: Number(row.year),
+    edition_name: row.edition_name ? String(row.edition_name) : null,
+    start_date: row.start_date ? String(row.start_date) : null,
+    conference_type: row.conference_type ? String(row.conference_type) : null
+  });
 }
 
 function formatDeadlineDate(value: unknown, row: Record<string, unknown>): string {

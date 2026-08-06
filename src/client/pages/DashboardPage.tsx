@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import type { Conference, ConferenceEdition, DashboardData, DashboardDeadline } from '../../shared/types';
 import { daysUntil } from '../../shared/date';
+import { editionDisplayName, editionPeriodLabel } from '../../shared/edition';
 import { useApi } from '../hooks/useApi';
 import { api } from '../lib/api';
 import { DeadlineBadge, ErrorState, formatDate, Loading, StatusBadge } from '../components/ui';
@@ -23,12 +24,12 @@ export function DashboardPage() {
       <div className="hero-focus-card">
         <p className="text-xs font-black uppercase tracking-[.16em] text-white/65">次の予定</p>
         {nextDeadline ? <Link to={`/editions/${nextDeadline.id}`} className="mt-4 block rounded-2xl outline-none transition hover:bg-white/5 focus-visible:bg-white/5">
-          <div className="flex flex-wrap items-baseline gap-2"><strong className="text-2xl font-black tracking-[-.04em]">{nextDeadline.acronym}</strong><span className="text-sm font-bold text-white/60">{nextDeadline.year}</span></div>
+          <strong className="text-2xl font-black tracking-[-.04em]">{editionDisplayName(nextDeadline)}</strong>
           <p className="mt-2 text-sm font-bold text-white/80">{nextDeadline.next_deadline_type}</p>
           <p className="mt-1 text-sm text-white/65">{formatDate(nextDeadline.next_deadline, true)}{Boolean(nextDeadline.is_aoe) && ' (AoE)'}</p>
           <span className="mt-4 inline-flex text-xs font-black text-[#ffd4c8]">詳細を見る →</span>
-        </Link> : nextEdition ? <Link to={`/conferences/${nextEdition.conference_id}`} className="mt-4 block rounded-2xl outline-none transition hover:bg-white/5 focus-visible:bg-white/5">
-          <div className="flex flex-wrap items-baseline gap-2"><strong className="text-2xl font-black tracking-[-.04em]">{nextEdition.acronym}</strong><span className="text-sm font-bold text-white/60">{nextEdition.year}</span></div>
+        </Link> : nextEdition ? <Link to={`/editions/${nextEdition.id}`} className="mt-4 block rounded-2xl outline-none transition hover:bg-white/5 focus-visible:bg-white/5">
+          <strong className="text-2xl font-black tracking-[-.04em]">{editionDisplayName(nextEdition)}</strong>
           <p className="mt-2 text-sm font-bold text-white/80">開催予定</p>
           <p className="mt-1 text-sm text-white/65">{formatDate(nextEdition.start_date)} · {[nextEdition.city, nextEdition.country].filter(Boolean).join(', ') || '開催地未定'}</p>
           <span className="mt-4 inline-flex text-xs font-black text-[#ffd4c8]">詳細を見る →</span>
@@ -44,7 +45,7 @@ export function DashboardPage() {
     <div className="mt-8 grid gap-6 lg:grid-cols-[1.5fr_1fr]">
       <section><SectionTitle title="直近の締切" link="/editions" />
         {data.deadlines.length ? <div className="surface divide-y divide-slate-100 overflow-hidden">{data.deadlines.slice(0, 10).map((item) => <Link key={item.deadline_id} to={`/editions/${item.id}`} className="grid gap-3 p-4 transition hover:bg-forest-50 sm:grid-cols-[1fr_auto] sm:items-center">
-          <div><div className="flex flex-wrap items-center gap-2"><span className="text-base font-black text-forest-950">{item.acronym}</span><span className="text-sm text-slate-500">{item.year}</span><StatusBadge value={item.deadline_status} /></div><p className="mt-1 text-sm font-semibold text-slate-700">{item.next_deadline_type} · {formatDate(item.next_deadline, true)}{Boolean(item.is_aoe) && ' (AoE)'}</p></div>
+          <div><div className="flex flex-wrap items-center gap-2"><span className="text-base font-black text-forest-950">{editionDisplayName(item)}</span><StatusBadge value={item.deadline_status} /></div><p className="mt-1 text-sm font-semibold text-slate-700">{item.next_deadline_type} · {formatDate(item.next_deadline, true)}{Boolean(item.is_aoe) && ' (AoE)'}</p></div>
           <DeadlineBadge date={item.next_deadline!} aoe={Boolean(item.is_aoe)} hasTime={Boolean(item.has_time)} />
         </Link>)}</div> : <DeadlineEmptyState />}
       </section>
@@ -55,15 +56,15 @@ export function DashboardPage() {
     </div>
 
     <section className="mt-8"><SectionTitle title="今後開催される学会" link="/calendar" />
-      <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">{data.upcoming_editions.slice(0, 6).map((item) => <Link to={`/conferences/${item.conference_id}`} key={item.id} className="surface p-5 transition hover:-translate-y-0.5 hover:border-forest-700"><div className="flex items-start justify-between gap-3"><h3 className="text-lg font-black text-forest-950">{item.acronym} {item.year}</h3><StatusBadge value={item.information_status} /></div><p className="mt-3 text-sm text-slate-600">{formatDate(item.start_date)}{item.end_date && ` 〜 ${formatDate(item.end_date)}`}</p><p className="mt-1 text-sm text-slate-500">{[item.city, item.country].filter(Boolean).join(', ') || '開催地未定'} · {item.attendance_format}</p></Link>)}</div>
+      <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">{data.upcoming_editions.slice(0, 6).map((item) => <Link to={`/editions/${item.id}`} key={item.id} className="surface p-5 transition hover:-translate-y-0.5 hover:border-forest-700"><div className="flex items-start justify-between gap-3"><h3 className="text-lg font-black text-forest-950">{editionDisplayName(item)}</h3><StatusBadge value={item.information_status} /></div><p className="mt-3 text-sm text-slate-600">{formatDate(item.start_date)}{item.end_date && ` 〜 ${formatDate(item.end_date)}`}</p><p className="mt-1 text-sm text-slate-500">{[item.city, item.country].filter(Boolean).join(', ') || '開催地未定'} · {item.attendance_format}</p></Link>)}</div>
     </section>
   </>;
 }
 
 function SummaryCard({ label, item, tone }: { label: string; item?: DashboardDeadline; tone: 'urgent' | 'soon' | 'normal' }) {
   const styles = { urgent: 'bg-[#fae9e3] text-[#9e3f2d]', soon: 'bg-[#f5ead5] text-[#7e5a24]', normal: 'bg-[#dfece5] text-forest-900' };
-  const content = <div className={`bento-card h-full ${styles[tone]}`}><p className="text-sm font-black tracking-[.06em] opacity-75">{label}の締切</p>{item ? <><div className="mt-4 flex flex-wrap items-baseline gap-2"><strong className="text-2xl font-black tracking-[-.04em]">{item.acronym}</strong><span className="text-xs font-bold opacity-65">{item.year}</span></div><p className="mt-1 text-sm font-bold">{item.next_deadline_type}</p><p className="mt-2 text-xs font-semibold opacity-70">{formatDate(item.next_deadline, true)}{item.is_aoe ? ' (AoE)' : ''}</p></> : <><p className="mt-5 text-lg font-black">予定なし</p><p className="mt-1 text-xs font-semibold opacity-65">この期間の締切はありません</p></>}</div>;
-  return item ? <Link to={`/conferences/${item.conference_id}`} className="rounded-[1.55rem] transition hover:-translate-y-0.5 focus-visible:-translate-y-0.5">{content}</Link> : content;
+  const content = <div className={`bento-card h-full ${styles[tone]}`}><p className="text-sm font-black tracking-[.06em] opacity-75">{label}の締切</p>{item ? <><strong className="mt-4 block text-2xl font-black tracking-[-.04em]">{editionDisplayName(item)}</strong><p className="mt-1 text-sm font-bold">{item.next_deadline_type}</p><p className="mt-2 text-xs font-semibold opacity-70">{formatDate(item.next_deadline, true)}{item.is_aoe ? ' (AoE)' : ''}</p></> : <><p className="mt-5 text-lg font-black">予定なし</p><p className="mt-1 text-xs font-semibold opacity-65">この期間の締切はありません</p></>}</div>;
+  return item ? <Link to={`/editions/${item.id}`} className="rounded-[1.55rem] transition hover:-translate-y-0.5 focus-visible:-translate-y-0.5">{content}</Link> : content;
 }
 
 function SectionTitle({ title, link }: { title: string; link?: string }) { return <div className="mb-4 flex items-center justify-between"><div className="flex items-center gap-3"><span className="h-px w-6 bg-[#e36f50]" /><h2 className="text-lg font-black tracking-[-.025em] text-forest-950">{title}</h2></div>{link && <Link to={link} className="rounded-full bg-white/60 px-3 py-1.5 text-xs font-black text-forest-700 transition hover:bg-white">すべて見る →</Link>}</div>; }
@@ -120,7 +121,7 @@ function DeadlineEmptyState() {
     {showExisting && <div className="mt-5 rounded-[1.35rem] border border-forest-700/15 bg-forest-50/70 p-4 sm:p-5">
       <div className="grid gap-4 sm:grid-cols-2">
         <label><span className="label">1. 学会を選択</span><select className="field" value={conferenceId} onChange={(event) => void selectConference(event.target.value)} disabled={loading && !conferences}><option value="">学会を選んでください</option>{conferences?.map((conference) => <option key={conference.id} value={conference.id}>{conference.acronym} — {conference.name}</option>)}</select></label>
-        <label><span className="label">2. 開催回を選択</span><select className="field" value={editionId} onChange={(event) => setEditionId(event.target.value)} disabled={!conferenceId || loading}><option value="">開催回を選んでください</option>{editions.map((edition) => <option key={edition.id} value={edition.id}>{edition.year}年{edition.city ? ` — ${edition.city}` : ''}</option>)}<option value="new">＋ 新しい開催回と締切を登録</option></select></label>
+        <label><span className="label">2. 開催回を選択</span><select className="field" value={editionId} onChange={(event) => setEditionId(event.target.value)} disabled={!conferenceId || loading}><option value="">開催回を選んでください</option>{editions.map((edition) => <option key={edition.id} value={edition.id}>{editionPeriodLabel(edition)}{edition.city ? ` — ${edition.city}` : ''}</option>)}<option value="new">＋ 新しい開催回と締切を登録</option></select></label>
       </div>
       {loading && <p className="mt-3 text-xs font-bold text-slate-500">読み込んでいます…</p>}
       {message && <p className="mt-3 text-sm font-semibold text-red-700">{message}</p>}

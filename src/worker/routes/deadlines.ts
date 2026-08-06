@@ -53,7 +53,7 @@ deadlineRoutes.put('/:id', async (c) => {
     const changed = d.deadline_at !== current.deadline_at;
     await c.env.DB.prepare(`UPDATE conference_deadlines SET deadline_type=?, title=?, deadline_at=?, has_time=?, timezone=?, is_aoe=?, information_status=?, previous_deadline_at=?, is_extended=?, notification_enabled=?, updated_at=?, version=version+1 WHERE id=?`)
       .bind(d.deadline_type, d.title ?? null, d.deadline_at, d.has_time ? 1 : 0, d.timezone ?? null, d.is_aoe ? 1 : 0, d.information_status, changed ? current.deadline_at : current.previous_deadline_at, changed ? 1 : current.is_extended, d.notification_enabled ? 1 : 0, nowSql(), id).run();
-    const row = await c.env.DB.prepare(`SELECT d.*, e.year, c.acronym FROM conference_deadlines d JOIN conference_editions e ON e.id=d.conference_edition_id JOIN conferences c ON c.id=e.conference_id WHERE d.id=?`).bind(id).first<Record<string, unknown>>();
+    const row = await c.env.DB.prepare(`SELECT d.*, e.year, e.edition_name, e.start_date, c.acronym, c.conference_type FROM conference_deadlines d JOIN conference_editions e ON e.id=d.conference_edition_id JOIN conferences c ON c.id=e.conference_id WHERE d.id=?`).bind(id).first<Record<string, unknown>>();
     if (changed && row) c.executionCtx.waitUntil(sendSlack(c.env, { type: 'deadline_changed', editionId: Number(row.conference_edition_id), deadlineId: id, scheduledDate: nowSql().slice(0, 10), text: deadlineChangedMessage(row, String(current.deadline_at), c.env.APP_BASE_URL) }));
     return c.json({ data: row });
   } catch (error) { return errorResponse(c, error); }

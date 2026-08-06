@@ -21,6 +21,7 @@ export const conferenceSchema = z.object({
 
 export const editionSchema = z.object({
   year: z.number().int().min(2000).max(2100),
+  edition_name: optionalText(120),
   official_url: url.nullable().optional(),
   country: optionalText(100),
   city: optionalText(100),

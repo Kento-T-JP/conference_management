@@ -1,6 +1,5 @@
 import { Hono } from 'hono';
 import { editionSchema } from '../../shared/schemas';
-import { shiftIsoDateToYear } from '../../shared/date';
 import type { Env } from '../index';
 import { ApiError, errorResponse, nowSql, parseId, validationDetails } from '../lib/api';
 import { mapEdition } from '../lib/db';
@@ -16,7 +15,7 @@ editionRoutes.get('/', async (c) => {
     const format = c.req.query('attendance_format');
     const status = c.req.query('information_status');
     const query = (c.req.query('q') ?? '').trim();
-    if (query) { clauses.push('(c.name LIKE ? OR c.acronym LIKE ?)'); values.push(`%${query}%`, `%${query}%`); }
+    if (query) { clauses.push('(c.name LIKE ? OR c.acronym LIKE ? OR e.edition_name LIKE ?)'); values.push(`%${query}%`, `%${query}%`, `%${query}%`); }
     if (year) { clauses.push('e.year=?'); values.push(Number(year)); }
     if (format) { clauses.push('e.attendance_format=?'); values.push(format); }
     if (status) { clauses.push('e.information_status=?'); values.push(status); }
@@ -37,13 +36,12 @@ editionRoutes.post('/conference/:conferenceId', async (c) => {
     const parsed = editionSchema.safeParse(await c.req.json());
     if (!parsed.success) throw new ApiError(400, 'VALIDATION_ERROR', '入力内容を確認してください。', validationDetails(parsed.error));
     const d = parsed.data;
-    const conference = await c.env.DB.prepare('SELECT id FROM conferences WHERE id=? AND is_archived=0').bind(conferenceId).first();
+    const conference = await c.env.DB.prepare('SELECT id FROM conferences WHERE id=? AND is_archived=0').bind(conferenceId).first<{ id: number }>();
     if (!conference) throw new ApiError(404, 'NOT_FOUND', '学会が見つかりません。');
-    const duplicate = await c.env.DB.prepare('SELECT id FROM conference_editions WHERE conference_id=? AND year=?').bind(conferenceId, d.year).first();
-    if (duplicate) throw new ApiError(409, 'DUPLICATE_EDITION', 'この学会の同じ開催年は既に登録されています。');
+    await validateEditionIdentity(c.env.DB, conferenceId, d);
     const now = nowSql();
-    const result = await c.env.DB.prepare(`INSERT INTO conference_editions(conference_id, year, official_url, country, city, attendance_format, start_date, end_date, timezone, information_status, is_cancelled, notes, created_at, updated_at) VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,?)`)
-      .bind(conferenceId, d.year, d.official_url ?? null, d.country ?? null, d.city ?? null, d.attendance_format, d.start_date ?? null, d.end_date ?? null, d.timezone ?? null, d.information_status, d.is_cancelled ? 1 : 0, d.notes ?? null, now, now).run();
+    const result = await c.env.DB.prepare(`INSERT INTO conference_editions(conference_id, year, edition_name, official_url, country, city, attendance_format, start_date, end_date, timezone, information_status, is_cancelled, notes, created_at, updated_at) VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)`)
+      .bind(conferenceId, d.year, d.edition_name ?? null, d.official_url ?? null, d.country ?? null, d.city ?? null, d.attendance_format, d.start_date ?? null, d.end_date ?? null, d.timezone ?? null, d.information_status, d.is_cancelled ? 1 : 0, d.notes ?? null, now, now).run();
     const id = Number(result.meta.last_row_id);
     const row = await joinedEdition(c.env.DB, id);
     c.executionCtx.waitUntil(sendSlack(c.env, { type: 'new_edition', editionId: id, deadlineId: null, scheduledDate: now.slice(0, 10), text: editionMessage(row!, c.env.APP_BASE_URL) }));
@@ -70,10 +68,9 @@ editionRoutes.put('/:id', async (c) => {
     const current = await c.env.DB.prepare('SELECT conference_id, version FROM conference_editions WHERE id=?').bind(id).first<{ conference_id: number; version: number }>();
     if (!current) throw new ApiError(404, 'NOT_FOUND', '開催回が見つかりません。');
     if (d.version && d.version !== current.version) throw new ApiError(409, 'UPDATE_CONFLICT', '別の更新が反映されています。画面を再読み込みしてください。');
-    const duplicate = await c.env.DB.prepare('SELECT id FROM conference_editions WHERE conference_id=? AND year=? AND id<>?').bind(current.conference_id, d.year, id).first();
-    if (duplicate) throw new ApiError(409, 'DUPLICATE_EDITION', 'この学会の同じ開催年は既に登録されています。');
-    await c.env.DB.prepare(`UPDATE conference_editions SET year=?, official_url=?, country=?, city=?, attendance_format=?, start_date=?, end_date=?, timezone=?, information_status=?, is_cancelled=?, notes=?, updated_at=?, version=version+1 WHERE id=?`)
-      .bind(d.year, d.official_url ?? null, d.country ?? null, d.city ?? null, d.attendance_format, d.start_date ?? null, d.end_date ?? null, d.timezone ?? null, d.information_status, d.is_cancelled ? 1 : 0, d.notes ?? null, nowSql(), id).run();
+    await validateEditionIdentity(c.env.DB, current.conference_id, d, id);
+    await c.env.DB.prepare(`UPDATE conference_editions SET year=?, edition_name=?, official_url=?, country=?, city=?, attendance_format=?, start_date=?, end_date=?, timezone=?, information_status=?, is_cancelled=?, notes=?, updated_at=?, version=version+1 WHERE id=?`)
+      .bind(d.year, d.edition_name ?? null, d.official_url ?? null, d.country ?? null, d.city ?? null, d.attendance_format, d.start_date ?? null, d.end_date ?? null, d.timezone ?? null, d.information_status, d.is_cancelled ? 1 : 0, d.notes ?? null, nowSql(), id).run();
     return c.json({ data: mapEdition((await joinedEdition(c.env.DB, id))!) });
   } catch (error) { return errorResponse(c, error); }
 });
@@ -107,27 +104,35 @@ for (const action of ['archive', 'restore'] as const) {
   });
 }
 
-editionRoutes.post('/:id/duplicate-next-year', async (c) => {
-  try {
-    const id = parseId(c.req.param('id'));
-    const source = await c.env.DB.prepare('SELECT * FROM conference_editions WHERE id=?').bind(id).first<Record<string, unknown>>();
-    if (!source) throw new ApiError(404, 'NOT_FOUND', '開催回が見つかりません。');
-    const nextYear = Number(source.year) + 1;
-    const duplicate = await c.env.DB.prepare('SELECT id FROM conference_editions WHERE conference_id=? AND year=?').bind(source.conference_id, nextYear).first();
-    if (duplicate) throw new ApiError(409, 'DUPLICATE_EDITION', '次年度の開催回は既に存在します。');
-    const now = nowSql();
-    const insert = await c.env.DB.prepare(`INSERT INTO conference_editions(conference_id, year, country, city, attendance_format, timezone, information_status, notes, created_at, updated_at) VALUES(?,?,?,?,?,?,'未確認',?,?,?)`)
-      .bind(source.conference_id, nextYear, source.country, source.city, source.attendance_format, source.timezone, source.notes, now, now).run();
-    const newId = Number(insert.meta.last_row_id);
-    const deadlines = await c.env.DB.prepare('SELECT deadline_type, title, deadline_at, has_time, timezone, is_aoe, notification_enabled FROM conference_deadlines WHERE conference_edition_id=? ORDER BY deadline_at').bind(id).all<Record<string, unknown>>();
-    for (const deadline of deadlines.results) {
-      await c.env.DB.prepare(`INSERT INTO conference_deadlines(conference_edition_id, deadline_type, title, deadline_at, has_time, timezone, is_aoe, information_status, notification_enabled, created_at, updated_at) VALUES(?,?,?,?,?,?,?,'未確認',?,?,?)`)
-        .bind(newId, deadline.deadline_type, deadline.title, shiftIsoDateToYear(String(deadline.deadline_at), nextYear), deadline.has_time, deadline.timezone, deadline.is_aoe, deadline.notification_enabled, now, now).run();
-    }
-    return c.json({ data: { ...mapEdition((await joinedEdition(c.env.DB, newId))!), deadlines_copied: deadlines.results.length } }, 201);
-  } catch (error) { return errorResponse(c, error); }
-});
-
 async function joinedEdition(db: D1Database, id: number) {
   return db.prepare(`SELECT e.*, c.name conference_name, c.acronym, c.official_url conference_official_url, c.conference_type, c.fields FROM conference_editions e JOIN conferences c ON c.id=e.conference_id WHERE e.id=?`).bind(id).first<Record<string, unknown>>();
+}
+
+type EditionIdentityInput = {
+  year: number;
+  edition_name?: string | null;
+  start_date?: string | null;
+  official_url?: string | null;
+};
+
+async function validateEditionIdentity(db: D1Database, conferenceId: number, edition: EditionIdentityInput, excludeId?: number) {
+  const result = await db.prepare(`SELECT id, edition_name, start_date, official_url
+    FROM conference_editions WHERE conference_id=? AND year=? AND is_archived=0${excludeId ? ' AND id<>?' : ''}`)
+    .bind(conferenceId, edition.year, ...(excludeId ? [excludeId] : [])).all<{ id: number; edition_name: string | null; start_date: string | null; official_url: string | null }>();
+  if (!result.results.length) return;
+
+  const name = edition.edition_name?.trim().toLocaleLowerCase() || null;
+  const url = edition.official_url?.trim().replace(/\/$/, '').toLocaleLowerCase() || null;
+  const duplicate = result.results.find((candidate) =>
+    (edition.start_date && candidate.start_date === edition.start_date)
+    || (name && candidate.edition_name?.trim().toLocaleLowerCase() === name)
+    || (url && candidate.official_url?.trim().replace(/\/$/, '').toLocaleLowerCase() === url)
+  );
+  if (duplicate) throw new ApiError(409, 'DUPLICATE_EDITION', '同じ開催回と思われる情報が既に登録されています。既存の開催回を編集してください。');
+  if (!edition.edition_name?.trim() && !edition.start_date) {
+    throw new ApiError(400, 'VALIDATION_ERROR', '同じ年に複数登録する場合は、開催回名または開催開始日を入力してください。', {
+      edition_name: '開催回を見分けるため、開催回名または開催開始日を入力してください。',
+      start_date: '開催回名を入力しない場合は、開催開始日を入力してください。'
+    });
+  }
 }

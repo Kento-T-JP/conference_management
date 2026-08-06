@@ -25,6 +25,7 @@ export interface ConferenceEdition {
   id: number;
   conference_id: number;
   year: number;
+  edition_name: string | null;
   official_url: string | null;
   country: string | null;
   city: string | null;

@@ -55,7 +55,7 @@ conferenceRoutes.get('/:id', async (c) => {
     const id = parseId(c.req.param('id'));
     const row = await c.env.DB.prepare('SELECT * FROM conferences WHERE id=?').bind(id).first<Record<string, unknown>>();
     if (!row) throw new ApiError(404, 'NOT_FOUND', '学会が見つかりません。');
-    const editions = await c.env.DB.prepare(`SELECT e.*, (SELECT MIN(deadline_at) FROM conference_deadlines d WHERE d.conference_edition_id=e.id AND d.deadline_at >= datetime('now')) next_deadline FROM conference_editions e WHERE conference_id=? ORDER BY year DESC`).bind(id).all();
+    const editions = await c.env.DB.prepare(`SELECT e.*, (SELECT MIN(deadline_at) FROM conference_deadlines d WHERE d.conference_edition_id=e.id AND d.deadline_at >= datetime('now')) next_deadline FROM conference_editions e WHERE conference_id=? ORDER BY year DESC, COALESCE(start_date,'9999-12-31'), COALESCE(edition_name,'')`).bind(id).all();
     return c.json({ data: { ...mapConference(row), editions: editions.results } });
   } catch (error) { return errorResponse(c, error); }
 });
