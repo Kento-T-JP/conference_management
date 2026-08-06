@@ -109,4 +109,27 @@ describe('API', () => {
     expect(body.data).toMatchObject({ configured: true, reminder_days: [14, 7, 1], weekly_enabled: true });
     expect(JSON.stringify(body)).not.toContain('hooks.slack.com');
   });
+
+  it('カレンダーを開催形式で絞り込める', async () => {
+    const statements: Array<{ query: string; values: unknown[] }> = [];
+    const db = {
+      prepare(query: string) {
+        const statement = {
+          query,
+          values: [] as unknown[],
+          bind(...values: unknown[]) { this.values = values; statements.push({ query: this.query, values }); return this; },
+          async all() { return { results: [] }; }
+        };
+        return statement;
+      }
+    } as unknown as D1Database;
+    const env = { APP_BASE_URL: 'http://localhost:5173', ENVIRONMENT: 'test', DB: db } satisfies Env;
+    const ctx = { waitUntil() {}, passThroughOnException() {}, props: {} } as unknown as ExecutionContext;
+    const response = await worker.fetch(new Request('http://localhost/api/calendar/events?start=2028-01-01&end=2029-01-01&attendance_formats=%E3%82%AA%E3%83%B3%E3%83%A9%E3%82%A4%E3%83%B3'), env, ctx);
+
+    expect(response.status).toBe(200);
+    expect(statements).toHaveLength(2);
+    expect(statements.every(({ query }) => query.includes('e.attendance_format IN (?)'))).toBe(true);
+    expect(statements.every(({ values }) => values.at(-1) === 'オンライン')).toBe(true);
+  });
 });

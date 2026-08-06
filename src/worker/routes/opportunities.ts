@@ -1,5 +1,5 @@
 import { Hono } from 'hono';
-import { ACTIONABLE_DEADLINE_TYPES, CALENDAR_EVENT_GROUPS, calendarGroupForDeadline } from '../../shared/constants';
+import { ACTIONABLE_DEADLINE_TYPES, ATTENDANCE_FORMATS, CALENDAR_EVENT_GROUPS, calendarGroupForDeadline } from '../../shared/constants';
 import { dateKeyInTimeZone, JAPAN_TIME_ZONE, zonedLocalDateTimeToIso } from '../../shared/timezone';
 import type { Env } from '../index';
 import { errorResponse } from '../lib/api';
@@ -33,20 +33,21 @@ opportunityRoutes.get('/calendar/events', async (c) => {
     const statuses = (c.req.query('information_status') ?? '').split(',').filter(Boolean);
     const requestedGroups = (c.req.query('event_categories') ?? CALENDAR_EVENT_GROUPS.map((group) => group.id).join(',')).split(',');
     const eventGroups = requestedGroups.filter((value) => CALENDAR_EVENT_GROUPS.some((group) => group.id === value));
-    const fields = (c.req.query('fields') ?? '').split(',').filter(Boolean);
     const conferenceTypes = (c.req.query('conference_types') ?? '').split(',').filter(Boolean);
+    const requestedAttendanceFormats = (c.req.query('attendance_formats') ?? '').split(',').filter(Boolean);
+    const attendanceFormats = requestedAttendanceFormats.filter((value) => ATTENDANCE_FORMATS.some((format) => format === value));
     const statusSql = statuses.length ? ` AND d.information_status IN (${statuses.map(() => '?').join(',')})` : '';
     const deadlineTypes = CALENDAR_EVENT_GROUPS.filter((group) => eventGroups.includes(group.id)).flatMap((group) => [...group.deadlineTypes]);
     const typeSql = deadlineTypes.length ? ` AND d.deadline_type IN (${deadlineTypes.map(() => '?').join(',')})` : ' AND 1=0';
-    const fieldSql = fields.length ? ` AND (${fields.map(() => 'c.fields LIKE ?').join(' OR ')})` : '';
     const conferenceTypeSql = conferenceTypes.length ? ` AND c.conference_type IN (${conferenceTypes.map(() => '?').join(',')})` : '';
+    const attendanceFormatSql = attendanceFormats.length ? ` AND e.attendance_format IN (${attendanceFormats.map(() => '?').join(',')})` : '';
     const deadlines = await c.env.DB.prepare(`SELECT d.id, d.deadline_type, d.title, d.deadline_at, d.has_time, d.timezone, d.is_aoe, d.information_status, e.id edition_id, e.year, e.edition_name, e.start_date, c.id conference_id, c.acronym, c.name conference_name, c.conference_type
       FROM conference_deadlines d JOIN conference_editions e ON e.id=d.conference_edition_id JOIN conferences c ON c.id=e.conference_id
-      WHERE e.is_archived=0 AND c.is_archived=0 AND date(d.deadline_at) >= date(?,'-1 day') AND date(d.deadline_at) < date(?,'+1 day')${statusSql}${typeSql}${fieldSql}${conferenceTypeSql}`)
-      .bind(start, end, ...statuses, ...deadlineTypes, ...fields.map((field) => `%${field}%`), ...conferenceTypes).all<Record<string, unknown>>();
+      WHERE e.is_archived=0 AND c.is_archived=0 AND date(d.deadline_at) >= date(?,'-1 day') AND date(d.deadline_at) < date(?,'+1 day')${statusSql}${typeSql}${conferenceTypeSql}${attendanceFormatSql}`)
+      .bind(start, end, ...statuses, ...deadlineTypes, ...conferenceTypes, ...attendanceFormats).all<Record<string, unknown>>();
     const includeConference = eventGroups.includes('conference');
-    const editions = includeConference ? await c.env.DB.prepare(`SELECT e.id, e.start_date, e.end_date, e.information_status, e.year, e.edition_name, c.id conference_id, c.acronym, c.name conference_name, c.conference_type FROM conference_editions e JOIN conferences c ON c.id=e.conference_id WHERE e.is_archived=0 AND c.is_archived=0 AND e.start_date IS NOT NULL AND e.start_date < date(?) AND COALESCE(e.end_date,e.start_date) >= date(?)${statuses.length ? ` AND e.information_status IN (${statuses.map(() => '?').join(',')})` : ''}${fieldSql}${conferenceTypeSql}`)
-      .bind(end, start, ...statuses, ...fields.map((field) => `%${field}%`), ...conferenceTypes).all<Record<string, unknown>>() : { results: [] };
+    const editions = includeConference ? await c.env.DB.prepare(`SELECT e.id, e.start_date, e.end_date, e.information_status, e.year, e.edition_name, c.id conference_id, c.acronym, c.name conference_name, c.conference_type FROM conference_editions e JOIN conferences c ON c.id=e.conference_id WHERE e.is_archived=0 AND c.is_archived=0 AND e.start_date IS NOT NULL AND e.start_date < date(?) AND COALESCE(e.end_date,e.start_date) >= date(?)${statuses.length ? ` AND e.information_status IN (${statuses.map(() => '?').join(',')})` : ''}${conferenceTypeSql}${attendanceFormatSql}`)
+      .bind(end, start, ...statuses, ...conferenceTypes, ...attendanceFormats).all<Record<string, unknown>>() : { results: [] };
     const deadlineEvents = deadlines.results.flatMap((row) => {
       const group = calendarGroupForDeadline(String(row.deadline_type));
       const allDay = !row.has_time;

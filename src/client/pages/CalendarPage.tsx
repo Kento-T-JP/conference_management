@@ -7,7 +7,7 @@ import jaLocale from '@fullcalendar/core/locales/ja';
 import type { DatesSetArg, EventClickArg, EventContentArg, EventSourceFuncArg } from '@fullcalendar/core';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { CALENDAR_EVENT_GROUPS, CONFERENCE_TYPES } from '../../shared/constants';
+import { ATTENDANCE_FORMATS, CALENDAR_EVENT_GROUPS, CONFERENCE_TYPES } from '../../shared/constants';
 import { JAPAN_TIME_ZONE } from '../../shared/timezone';
 import { api, queryString } from '../lib/api';
 import { deadlineName } from '../lib/deadlineDraft';
@@ -33,7 +33,7 @@ export function CalendarPage() {
   const calendarRef = useRef<FullCalendar>(null);
   const [categories, setCategories] = useState<string[]>(CALENDAR_EVENT_GROUPS.map((group) => group.id));
   const [conferenceType, setConferenceType] = useState('');
-  const [field, setField] = useState('');
+  const [attendanceFormat, setAttendanceFormat] = useState('');
   const [search, setSearch] = useState('');
   const [view, setView] = useState('dayGridMonth');
   const [calendarTitle, setCalendarTitle] = useState('');
@@ -45,7 +45,7 @@ export function CalendarPage() {
   const eventSource = useMemo(() => async (info: EventSourceFuncArg, success: (events: CalendarEvent[]) => void, failure: (error: Error) => void) => {
     try {
       setCalendarError('');
-      const { data } = await api<{ data: CalendarEvent[] }>(`/api/calendar/events${queryString({ start: info.startStr.slice(0, 10), end: info.endStr.slice(0, 10), event_categories: categories.length ? categories.join(',') : 'none', conference_types: conferenceType, fields: field.trim() })}`);
+      const { data } = await api<{ data: CalendarEvent[] }>(`/api/calendar/events${queryString({ start: info.startStr.slice(0, 10), end: info.endStr.slice(0, 10), event_categories: categories.length ? categories.join(',') : 'none', conference_types: conferenceType, attendance_formats: attendanceFormat })}`);
       const query = search.trim().toLocaleLowerCase('ja');
       const filtered = query ? data.filter((event) => `${event.title} ${event.extendedProps.conferenceName ?? ''} ${event.extendedProps.deadlineType ?? ''} ${deadlineName(event.extendedProps.deadlineType ?? '')} ${groupLabel(event.extendedProps.kind)}`.toLocaleLowerCase('ja').includes(query)) : data;
       setVisibleEvents(filtered);
@@ -55,7 +55,7 @@ export function CalendarPage() {
       setCalendarError(failureError.message);
       failure(failureError);
     }
-  }, [categories, conferenceType, field, search]);
+  }, [attendanceFormat, categories, conferenceType, search]);
 
   const selectedDayEvents = selectedDay ? visibleEvents.filter((event) => occursOn(event, selectedDay)) : [];
 
@@ -77,7 +77,7 @@ export function CalendarPage() {
   function resetFilters() {
     setCategories(CALENDAR_EVENT_GROUPS.map((group) => group.id));
     setConferenceType('');
-    setField('');
+    setAttendanceFormat('');
     setSearch('');
   }
 
@@ -130,7 +130,7 @@ export function CalendarPage() {
           <button type="button" onClick={() => move('next')} aria-label="次の期間">›</button>
         </div>
         <div className="calendar-title"><h2>{calendarTitle}</h2><span>JST</span></div>
-        <label className="calendar-search"><span className="sr-only">予定を検索</span><span aria-hidden="true">⌕</span><input value={search} onChange={(event) => setSearch(event.target.value)} placeholder="学会名・予定を検索" /></label>
+        <label className="calendar-search"><span className="sr-only">学会や予定を検索</span><span aria-hidden="true">⌕</span><input type="search" value={search} onChange={(event) => setSearch(event.target.value)} placeholder="学会名・略称・開催回名・予定名" /></label>
         <label className="calendar-view-select"><span className="sr-only">表示形式</span><select value={view} onChange={(event) => changeView(event.target.value)}>{viewOptions.map((option) => <option key={option.value} value={option.value}>{option.label}</option>)}</select></label>
       </div>
 
@@ -138,7 +138,7 @@ export function CalendarPage() {
         <aside className="calendar-sidebar">
           <Link className="calendar-add-button" to="/conferences">＋ 予定を追加</Link>
           <div className="calendar-sidebar-section"><div className="flex items-center justify-between"><h3>表示する予定</h3><button type="button" onClick={resetFilters}>リセット</button></div><div className="mt-3 space-y-1">{CALENDAR_EVENT_GROUPS.map((group) => <label key={group.id} className={`calendar-list-filter calendar-filter--${group.id}`}><input type="checkbox" checked={categories.includes(group.id)} onChange={() => toggle(group.id)} /><span className="calendar-filter-dot" /><span>{group.label}</span></label>)}</div></div>
-          <div className="calendar-sidebar-section"><h3>絞り込み</h3><label className="mt-3 block"><span className="label">研究分野</span><input className="field" placeholder="例：数理最適化" value={field} onChange={(event) => setField(event.target.value)} /></label><label className="mt-4 block"><span className="label">学会種別</span><select className="field" value={conferenceType} onChange={(event) => setConferenceType(event.target.value)}><option value="">すべて</option>{CONFERENCE_TYPES.map((type) => <option key={type}>{type}</option>)}</select></label></div>
+          <div className="calendar-sidebar-section"><h3>絞り込み</h3><label className="mt-3 block"><span className="label">学会種別</span><select className="field" value={conferenceType} onChange={(event) => setConferenceType(event.target.value)}><option value="">すべて</option>{CONFERENCE_TYPES.map((type) => <option key={type}>{type}</option>)}</select></label><label className="mt-4 block"><span className="label">開催形式</span><select className="field" value={attendanceFormat} onChange={(event) => setAttendanceFormat(event.target.value)}><option value="">すべて</option>{ATTENDANCE_FORMATS.map((format) => <option key={format}>{format}</option>)}</select></label></div>
           <div className="calendar-sidebar-section calendar-legend"><h3>色の見方</h3>{CALENDAR_EVENT_GROUPS.map((group) => <div key={group.id}><span className={`calendar-legend-dot calendar-legend-dot--${group.id}`} />{group.label}</div>)}</div>
         </aside>
 
