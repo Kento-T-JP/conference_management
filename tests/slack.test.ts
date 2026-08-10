@@ -64,6 +64,32 @@ describe('Slack通知', () => {
     await runWeeklySummary({ DB, APP_BASE_URL: 'https://example.com', ENVIRONMENT: 'test' }, new Date('2028-01-01T00:00:00Z'));
     expect(batch).not.toHaveBeenCalled();
   });
+  it('個別通知を無効にした締切も週次まとめには掲載する', async () => {
+    const batchQueries: string[] = [];
+    const DB = {
+      prepare(query: string) {
+        if (query.includes("key='weekly_enabled'")) return { first: async () => ({ value: 'true' }) };
+        if (query.includes('SELECT status FROM notification_logs')) return { bind: () => ({ first: async () => null }) };
+        if (query.includes('INSERT INTO notification_logs')) return { bind: () => ({ run: async () => ({ success: true }) }) };
+        return { query, bind() { return this; } };
+      },
+      async batch(statements: Array<{ query: string }>) {
+        batchQueries.push(...statements.map((statement) => statement.query));
+        return [
+          { results: [{ acronym: 'MSS', year: 2026, edition_name: '11月研究会', conference_type: '研究会', edition_id: 8, deadline_type: 'Other', title: '発表申込', deadline_at: '2026-09-04T23:59', has_time: 1, timezone: 'Asia/Tokyo', is_aoe: 0, notification_enabled: 0 }] },
+          { results: [] }
+        ];
+      }
+    } as unknown as D1Database;
+    const fetchMock = vi.fn().mockResolvedValue(new Response('ok', { status: 200 }));
+    vi.stubGlobal('fetch', fetchMock);
+
+    await runWeeklySummary({ DB, APP_BASE_URL: 'https://example.com', SLACK_WEBHOOK_URL: 'https://hooks.slack.com/services/T_TEST/B_TEST/TEST_TOKEN', ENVIRONMENT: 'test' }, new Date('2026-08-10T00:00:00Z'));
+
+    expect(batchQueries[0]).not.toContain('d.notification_enabled=1');
+    const payload = JSON.parse(String((fetchMock.mock.calls[0][1] as RequestInit).body)) as { text: string };
+    expect(payload.text).toContain('MSS 2026年11月研究会 — その他（発表申込）');
+  });
   it('開催回を日本語の日付と読みやすい分野で整形する', () => {
     const text = editionMessage({ id: 3, acronym: 'IEEE CVPR', year: 2027, start_date: '2027-06-15', end_date: '2027-06-19', city: 'Nashville', country: 'United States', attendance_format: '現地', fields: '["機械学習","コンピュータビジョン"]', official_url: 'https://cvpr.thecvf.com/' }, 'https://conference.example.com');
     expect(text).toContain('*IEEE CVPR 2027*');
