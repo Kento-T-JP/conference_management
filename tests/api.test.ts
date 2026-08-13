@@ -83,6 +83,42 @@ describe('API', () => {
     expect(await response.json()).toEqual({ error: { code: 'DUPLICATE_EDITION', message: '同じ開催回と思われる情報が既に登録されています。既存の開催回を編集してください。' } });
   });
 
+  it('LIKEのワイルドカードを含む学会名もリテラル文字列として登録する', async () => {
+    const statements: Array<{ query: string; values: unknown[] }> = [];
+    const name = `Conference ${'_%'.repeat(80)}`;
+    const db = {
+      prepare(query: string) {
+        const statement = {
+          query,
+          values: [] as unknown[],
+          bind(...values: unknown[]) { this.values = values; statements.push({ query: this.query, values }); return this; },
+          async all() {
+            if (query.includes('FROM conferences WHERE is_archived=0')) {
+              if (query.includes(' LIKE ')) throw new Error('LIKE or GLOB pattern too complex');
+              return { results: [] };
+            }
+            return { results: [] };
+          },
+          async run() { return { success: true, meta: { last_row_id: 41 } }; },
+          async first() {
+            return { id: 41, name, acronym: 'WILDCARD', official_url: 'https://example.com/wildcard', conference_type: 'その他', frequency: '単発', fields: '[]', keywords: '[]', notes: null, is_archived: 0, created_at: '2026-08-13T00:00:00.000Z', updated_at: '2026-08-13T00:00:00.000Z', archived_at: null, version: 1 };
+          }
+        };
+        return statement;
+      }
+    } as unknown as D1Database;
+    const env = { APP_BASE_URL: 'http://localhost:5173', ENVIRONMENT: 'test', DB: db } satisfies Env;
+    const ctx = { waitUntil() {}, passThroughOnException() {}, props: {} } as unknown as ExecutionContext;
+    const response = await worker.fetch(new Request('http://localhost/api/conferences', {
+      method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ name, acronym: 'WILDCARD', official_url: 'https://example.com/wildcard', conference_type: 'その他', frequency: '単発', fields: [], keywords: [], notes: null })
+    }), env, ctx);
+
+    expect(response.status).toBe(201);
+    expect(statements[0].query).toContain('instr(lower(name), lower(?))');
+    expect(statements[0].query).not.toContain(' LIKE ');
+    expect(statements[0].values.at(-1)).toBe(name);
+  });
+
   it('Webhook未設定時はSlackテスト通知を拒否する', async () => {
     const env = { APP_BASE_URL: 'http://localhost:5173', ENVIRONMENT: 'test', DB: {} as D1Database } satisfies Env;
     const ctx = { waitUntil() {}, passThroughOnException() {}, props: {} } as unknown as ExecutionContext;

@@ -42,8 +42,8 @@ conferenceRoutes.post('/', async (c) => {
     const parsed = conferenceSchema.safeParse(await c.req.json());
     if (!parsed.success) throw new ApiError(400, 'VALIDATION_ERROR', '入力内容を確認してください。', validationDetails(parsed.error));
     const data = parsed.data;
-    const duplicates = await c.env.DB.prepare(`SELECT id, name, acronym, official_url FROM conferences WHERE is_archived=0 AND (lower(acronym)=lower(?) OR lower(official_url)=lower(?) OR lower(name) LIKE lower(?)) LIMIT 5`)
-      .bind(data.acronym, data.official_url, `%${data.name}%`).all();
+    const duplicates = await c.env.DB.prepare(`SELECT id, name, acronym, official_url FROM conferences WHERE is_archived=0 AND (lower(acronym)=lower(?) OR lower(official_url)=lower(?) OR instr(lower(name), lower(?)) > 0) LIMIT 5`)
+      .bind(data.acronym, data.official_url, data.name).all();
     const now = nowSql();
     const result = await c.env.DB.prepare(`INSERT INTO conferences(name, acronym, official_url, conference_type, frequency, fields, keywords, notes, created_at, updated_at) VALUES(?,?,?,?,?,?,?,?,?,?)`)
       .bind(data.name, data.acronym, data.official_url, data.conference_type, data.frequency, JSON.stringify(data.fields), JSON.stringify(data.keywords), data.notes ?? null, now, now).run();
